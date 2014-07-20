@@ -30,11 +30,13 @@ private ImageIcon[] scoreIcon;
 private ImageIcon blank;
 private JLabel nextPlayerIcon;
 private Color scorelines = new Color(128, 64, 0);
-private Color background = new Color(220, 128, 5);
+//private Color background = new Color(220, 128, 5);
+private Color background = new Color(255, 255, 0);
 private String logoIcon;
 private String blankfile;
 private String[] iconFile;
 private String[] scoreIconFile;
+private JLabel errorMessage;
 public final int NUMPLAYER = 2;
 public int CURRENTPLAYERTURN = 0;
 public final int NUMROW = 6;
@@ -47,9 +49,10 @@ private final int Scoreboardw = 2 * PieceSize;
 private final int ScoreboardH = GridH;
 private final int LogoH = 2 * PieceSize;
 private final int logow = GridW + Scoreboardw;
-private final int FrameW = (int)(logow * 1.02);
+private final int FrameW = (int)(logow * 1.07);
 private final int FrameH = (int)((LogoH + GridH) * 1.1);
-
+private final Font HeaderFont = new Font ("Serif", Font.PLAIN, 18);
+private final Font regularFont = new Font ("Serif", Font.BOLD, 16);
 public ConnectFourGUI () {
 	initConfig();
 	InitilizeImageIcons();
@@ -70,8 +73,8 @@ public ConnectFourGUI () {
 			logoIcon = "asdf";
 			iconFile[0] = "Red.png";
 			iconFile[1] = "Black.png";
-			scoreIconFile[0] = "asdf";
-			scoreIconFile[1] = "asdf";
+			scoreIconFile[0] = "Red.png";
+			scoreIconFile[1] = "Black.png";
 			blankfile = "asdf";
 	}
 	
@@ -103,7 +106,13 @@ public ConnectFourGUI () {
 					public void mouseClicked(MouseEvent arg0) {
 						// AI CALL HERE
 //						if (CURRENTPLAYERTURN == 0){
-							setPiece(r, c);
+							if (!setPiece(r, c)){
+								errorMessage.setText("Invalid move! Try again.");
+							} else{
+								errorMessage.setText("");
+							}
+//						} else{
+//							ai();
 //						}
 					}
 					public void mouseEntered(MouseEvent arg0) {
@@ -119,7 +128,9 @@ public ConnectFourGUI () {
 			}
 		}
 	}
-	
+	private void ai(){
+		
+	}
 	// Create a the grid
 	private JPanel CreateGrid() {
 		JPanel panel = new JPanel();
@@ -142,9 +153,6 @@ public ConnectFourGUI () {
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		panel.setBackground (scorelines);
 		
-		Font HeaderFont = new Font ("Serif", Font.PLAIN, 18);
-		Font regularFont = new Font ("Serif", Font.BOLD, 16);
-		
 		// Create a panel for the scoreboard
 		JPanel scorePanel = new JPanel();
 		scorePanel.setBackground(scorelines);
@@ -152,6 +160,7 @@ public ConnectFourGUI () {
 		// Create the label to display "SCOREBOARD" heading
 		JLabel scoreLabel = new JLabel ("SCOREBOARD", JLabel.CENTER);
 		scoreLabel.setFont(HeaderFont);
+		scoreLabel.setForeground(Color.white);
 		scoreLabel.setAlignmentX (Component.CENTER_ALIGNMENT);
 		//scoreLabel.setForeground(Color.white);
 		
@@ -167,10 +176,10 @@ public ConnectFourGUI () {
 			playerScore[i] = new JTextField();
 			playerScore[i].setFont(regularFont);
 			playerScore[i].setText("0");
+			playerScore[i].setForeground(Color.white);
 			playerScore[i].setEditable(false);
 			playerScore[i].setHorizontalAlignment (JTextField.CENTER);
 			playerScore[i].setPreferredSize (new Dimension (Scoreboardw - PieceSize - 10, 30));
-			//playerScore[i].setBackground(background);
 			playerScore[i].setBackground(scorelines);
 		}
 	
@@ -180,6 +189,20 @@ public ConnectFourGUI () {
 			scorePanel.add(playerScore[i]);
 		}
 		
+		JPanel errorPanel = new JPanel();
+		errorPanel.setBackground(scorelines);
+		JLabel errorHeader = new JLabel("NOTIFICATIONS", JLabel.CENTER);
+		errorHeader.setFont(HeaderFont);
+		errorHeader.setForeground(Color.white);
+		errorHeader.setAlignmentX(Component.CENTER_ALIGNMENT);
+		
+		errorMessage = new JLabel("", JLabel.CENTER);
+		errorMessage.setFont(HeaderFont);
+		errorMessage.setForeground(Color.white);
+		errorMessage.setAlignmentX(Component.CENTER_ALIGNMENT);
+		errorPanel.add(errorHeader);
+		errorPanel.add(errorMessage);
+		
 		JPanel nextPanel = new JPanel();
 		//nextPanel.setBackground(background);
 		nextPanel.setBackground(scorelines);
@@ -187,6 +210,7 @@ public ConnectFourGUI () {
 		// Create the label to display "NEXT TURN" heading
 		JLabel nextLabel = new JLabel ("NEXT TURN", JLabel.CENTER);
 		nextLabel.setFont(HeaderFont);
+		nextLabel.setForeground(Color.white);
 		nextLabel.setAlignmentX (Component.CENTER_ALIGNMENT);
 		//nextLabel.setForeground(Color.white);
 		
@@ -199,6 +223,7 @@ public ConnectFourGUI () {
 		nextPanel.add(nextPlayerIcon);
 		
 		panel.add(scorePanel);
+		panel.add(errorPanel);
 		panel.add(nextPanel);
 		
 		return panel;
@@ -218,7 +243,9 @@ public ConnectFourGUI () {
 		JLabel logo = new JLabel();
 		logo.setIcon(new ImageIcon(logoIcon));
 		logoPane.add(logo);
-		
+		JLabel welcome = new JLabel("Connect 4");
+		welcome.setFont(new Font ("Serif", Font.BOLD, 30));
+		logoPane.add(welcome);
 		// Create the bottom Panel which contains the play panel and info Panel
 		JPanel bottomPane = new JPanel();
 		bottomPane.setLayout(new BoxLayout(bottomPane,BoxLayout.X_AXIS));
@@ -232,6 +259,7 @@ public ConnectFourGUI () {
 		
 		Framen.setContentPane(panel);
 		Framen.setSize(FrameW, FrameH);
+		Framen.setResizable(false);
 		Framen.setVisible(true);
 	}
 	
@@ -253,27 +281,21 @@ public ConnectFourGUI () {
 	// Display the specified player icon on the specified slot
 	
 	public boolean setPiece(int row, int col) {
-		try{
-			for (int j = slots.length - 1; j >= 0; j--){
-				if (slots[j][col].getIcon() == null){
-					slots[j][col].setIcon(playerIcon[CURRENTPLAYERTURN]);
-					slots[j][col].paint(slots[j][col].getGraphics());
-					Thread.sleep(1);
-					if (checkWin()){
-						showWinnerMessage(CURRENTPLAYERTURN);
-					} else if (checkTie()){
-						showTieGameMessage();
-					}
-					CURRENTPLAYERTURN = 1 - (CURRENTPLAYERTURN);
-					setNextPlayer();
-					return true;
+		for (int j = slots.length - 1; j >= 0; j--){
+			if (slots[j][col].getIcon() == null){
+				slots[j][col].setIcon(playerIcon[CURRENTPLAYERTURN]);
+				slots[j][col].paint(slots[j][col].getGraphics());
+				if (checkWin()){
+					showWinnerMessage(CURRENTPLAYERTURN);
+				} else if (checkTie()){
+					showTieGameMessage();
 				}
-				Thread.sleep(1);
-			} 
-			return false;
-		}catch(InterruptedException ie){
-			return false;
-		}
+				CURRENTPLAYERTURN = 1 - (CURRENTPLAYERTURN);
+				setNextPlayer();
+				return true;
+			}
+		} 
+		return false;
 	}
 	
 	// Display the score on the textfield of the corresponding player
@@ -372,6 +394,11 @@ public ConnectFourGUI () {
 	// Display a window showing the winner of this game
 	public void showWinnerMessage(int player){
 		JOptionPane.showMessageDialog(null, " has won this game!", "Winner!", JOptionPane.PLAIN_MESSAGE, playerIcon[player]);
+		int newScore = Integer.parseInt(playerScore[player].getText()) + 1;
+		playerScore[player].setText(Integer.toString(newScore));
+		if (newScore == MAXGAME){
+			MatchWinner(player);
+		}
 		this.resetGameBoard();
 	}
 	
