@@ -5,6 +5,8 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -26,7 +28,7 @@ public class GameGUI extends JFrame {
     private static final String filename = "scores.txt";
     private static int[][] board = new int[4][4];
     private static int currentScore = 0;
-    private static String fontStyle = "Serif";
+    private static String fontStyle = "Arial";
     private int highScore = updateHigh();
     private static boolean ai_not_running = true;
     public static int GOAL = 2048;
@@ -94,18 +96,50 @@ public class GameGUI extends JFrame {
         mainPanel.setBackground(new Color(255, 255, 51));
 
         winLabel.setBackground(new Color(255, 255, 255));
-        winLabel.setFont(new Font(fontStyle, 1, 50)); // NOI18N
+        winLabel.setFont(new Font(fontStyle, 1, 50));
         winLabel.setForeground(new Color(255, 255, 255));
         winLabel.setHorizontalAlignment(SwingConstants.CENTER);
         winLabel.setText("You win!");
 
         menuPanel.setBackground(new Color(143, 122, 102));
 
-        tryAgainLabel.setFont(new Font(fontStyle, 0, 18)); // NOI18N
+        tryAgainLabel.setFont(new Font(fontStyle, 0, 18));
         tryAgainLabel.setForeground(new Color(255, 255, 255));
         tryAgainLabel.setHorizontalAlignment(SwingConstants.CENTER);
         tryAgainLabel.setText("Try again");
+        tryAgainLabel.addMouseListener(new MouseListener(){
 
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseExited(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mousePressed(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				restart();
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+        	
+        });
         GroupLayout menuPanelLayout = new GroupLayout(menuPanel);
         menuPanel.setLayout(menuPanelLayout);
         menuPanelLayout.setHorizontalGroup(
@@ -843,46 +877,13 @@ public class GameGUI extends JFrame {
         }
     }
     private void updateBoard(int n, boolean real) {
-        int[][] before = copyBoard(board);
-        if (n == KeyEvent.VK_LEFT) {
+    	int[][] before = copyBoard(board);
+    	if (n == KeyEvent.VK_LEFT) {
             pushLeft();
             //check tiles with x > 0, from left to right to see if they collapse
-            for (int i = 0; i < 4; i++) {
-                for (int j = 1; j < 4; j++) {
-                	//If two consecutive numbers found, add them together
-                    if (board[i][j-1] == board[i][j]) {
-                        board[i][j-1] *= 2;
-                        //If we are checking if the user could hypothetically move, then 
-                        //this will not run
-                        if (real) {
-                            currentScore += board[i][j-1];
-                        }
-                        board[i][j] = 0; //temporarily leave a 0 which will go away when we push again
-                    }
-                }
-            }
+            joinTiles(real);
             pushLeft();
-            if (!Arrays.deepEquals(before, board)) {
-                ArrayList<int[]> a = new ArrayList<int[]>();
-                //Gather all Empty Tiles left on the board
-                for (int i = 0; i < 4; i++) {
-                    for (int j = 0; j < 4; j++) {
-                        if (board[i][j] == 0) {
-                            int[] coords = {i, j};
-                            a.add(coords);
-                        }
-                    }
-                }
-                //Shuffle arraylist around
-                Collections.shuffle(a);
-                int random = (int) (Math.random() * 10);
-                if (random < 2) {
-                	board[a.get(0)[0]][a.get(0)[1]] = 4;
-                } else{
-                	//Higher chance of getting a 2
-                	board[a.get(0)[0]][a.get(0)[1]] = 2;
-                }
-            }
+            addNewTile(before);
         }
         else if (n == KeyEvent.VK_UP) {
             rotateCCW();
@@ -897,12 +898,52 @@ public class GameGUI extends JFrame {
             //Reverse effects
             rotateCW();
             rotateCW();
+        	
         }
         else if (n == KeyEvent.VK_DOWN) {
             rotateCW();
             updateBoard(KeyEvent.VK_LEFT, real);
             //Reverse effects
             rotateCCW();
+        }
+    }
+    private void addNewTile(int[][] before){
+    	if (!Arrays.deepEquals(before, board)) {
+            ArrayList<int[]> a = new ArrayList<int[]>();
+            //Gather all Empty Tiles left on the board
+            for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 4; j++) {
+                    if (board[i][j] == 0) {
+                        int[] coords = {i, j};
+                        a.add(coords);
+                    }
+                }
+            }
+            //Shuffle arraylist around
+            Collections.shuffle(a);
+            int random = (int) (Math.random() * 10);
+            if (random < 2) {
+            	board[a.get(0)[0]][a.get(0)[1]] = 4;
+            } else{
+            	//Higher chance of getting a 2
+            	board[a.get(0)[0]][a.get(0)[1]] = 2;
+            }
+        }
+    }
+    private void joinTiles(boolean real){
+    	for (int i = 0; i < 4; i++) {
+            for (int j = 1; j < 4; j++) {
+            	//If two consecutive numbers found, add them together
+                if (board[i][j-1] == board[i][j]) {
+                    board[i][j-1] *= 2;
+                    //If we are checking if the user could hypothetically move, then 
+                    //this will not run
+                    if (real) {
+                        currentScore += board[i][j-1];
+                    }
+                    board[i][j] = 0; //temporarily leave a 0 which will go away when we push again
+                }
+            }
         }
     }
     private void pushLeft() {
