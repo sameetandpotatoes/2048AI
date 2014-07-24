@@ -3,6 +3,8 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -32,7 +34,7 @@ public class GameGUI extends JFrame {
     private int highScore = updateHigh();
     private static boolean ai_not_running = true;
     public static int GOAL = 2048;
-
+    public static long lastTime = System.currentTimeMillis();
     public static Color NUMBER_COLOR = new Color(119, 110, 101);
     public static Color PANEL_BACKGROUND_COLOR = new Color(204, 192, 179);
     public static Color BORDER_COLOR = new Color(187, 173, 160);
@@ -42,6 +44,9 @@ public class GameGUI extends JFrame {
         updateText();
         mainGameFrame.setVisible(false);
         updateColors();
+    }
+    public static int[][] getBoard(){
+    	return board;
     }
     private void initComponents() {
         mainGameFrame = new JFrame();
@@ -63,7 +68,7 @@ public class GameGUI extends JFrame {
         jLbl1_1 = new JLabel();
         jPanel1_2 = new JPanel();
         jLbl1_2 = new JLabel();
-        jPanel20 = new JPanel();
+        jPanel1_3 = new JPanel();
         jLbl1_3 = new JLabel();
         jPanel2_0 = new JPanel();
         jLbl2_0 = new JLabel();
@@ -92,6 +97,7 @@ public class GameGUI extends JFrame {
         mainGameFrame.setAlwaysOnTop(true);
         mainGameFrame.setMinimumSize(new Dimension(405, 523));
         mainGameFrame.setType(java.awt.Window.Type.POPUP);
+        mainGameFrame.setResizable(false);
 
         mainPanel.setBackground(new Color(255, 255, 51));
 
@@ -391,28 +397,28 @@ public class GameGUI extends JFrame {
                 .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
-        jPanel20.setBackground(PANEL_BACKGROUND_COLOR);
-        jPanel20.setBorder(BorderFactory.createLineBorder(BORDER_COLOR, 5));
-        jPanel20.setToolTipText("");
-        jPanel20.setMaximumSize(null);
+        jPanel1_3.setBackground(PANEL_BACKGROUND_COLOR);
+        jPanel1_3.setBorder(BorderFactory.createLineBorder(BORDER_COLOR, 5));
+        jPanel1_3.setToolTipText("");
+        jPanel1_3.setMaximumSize(null);
 
         jLbl1_3.setFont(new Font(fontStyle, 1, 31)); // NOI18N
         jLbl1_3.setForeground(NUMBER_COLOR);
         jLbl1_3.setHorizontalAlignment(SwingConstants.CENTER);
         jLbl1_3.setText("" + board[1][3]);
 
-        GroupLayout jPanel20Layout = new GroupLayout(jPanel20);
-        jPanel20.setLayout(jPanel20Layout);
-        jPanel20Layout.setHorizontalGroup(
-            jPanel20Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel20Layout.createSequentialGroup()
+        GroupLayout jPanel1_3Layout = new GroupLayout(jPanel1_3);
+        jPanel1_3.setLayout(jPanel1_3Layout);
+        jPanel1_3Layout.setHorizontalGroup(
+            jPanel1_3Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1_3Layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jLbl1_3, GroupLayout.PREFERRED_SIZE, 72, GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
-        jPanel20Layout.setVerticalGroup(
-            jPanel20Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel20Layout.createSequentialGroup()
+        jPanel1_3Layout.setVerticalGroup(
+            jPanel1_3Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1_3Layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jLbl1_3, GroupLayout.PREFERRED_SIZE, 69, GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -708,7 +714,15 @@ public class GameGUI extends JFrame {
         AIButton.setText("AI");
         AIButton.setFocusable(false);
         AIButton.setRequestFocusEnabled(false);
+        AIButton.addActionListener(new ActionListener(){
 
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				// TODO Auto-generated method stub
+				ai();
+			}
+        	
+        });
         GroupLayout layout = new GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -735,7 +749,7 @@ public class GameGUI extends JFrame {
                                 .addComponent(jPanel1_2, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)))
                         .addGap(0, 0, 0)
                         .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                            .addComponent(jPanel20, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jPanel1_3, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                             .addComponent(jPanel2_3, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                             .addComponent(jPanel0_3, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)))))
             .addGroup(layout.createSequentialGroup()
@@ -776,7 +790,7 @@ public class GameGUI extends JFrame {
                     .addComponent(jPanel0_1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                     .addComponent(jPanel1_2, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jPanel20, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jPanel1_3, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                     .addComponent(jPanel1_0, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                     .addComponent(jPanel1_1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
@@ -798,85 +812,34 @@ public class GameGUI extends JFrame {
     private void arrowKeyHandler(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_arrowKeyHandler
 //        if (ai_not_running) ai();
         int id = evt.getKeyCode();
-        updateBoard(id, true);
-        if (currentScore > highScore) {
-            highScore = currentScore;
-        }
-        updateText(); //Score changed, so text needs to be updated
-        if (checkWin()) {
-            mainGameFrame.setVisible(true);
-        }
-        if (checkLoss()) {
-            winLabel.setText("Game over!");
-            winLabel.setForeground(NUMBER_COLOR);
-            mainPanel.setBackground(new Color(238, 228, 218));
-            mainGameFrame.setVisible(true);
-        }
-        updateColors(); //If tiles changed numbers, we need to update the colors
+        handleMoves(id);
     }
-//    private void menuPanelMouseClicked(MouseEvent evt) {//GEN-FIRST:event_menuPanelMouseClicked
-//        File f = new File(filename);
-//        ArrayList<String[]> lines = new ArrayList<>();
-//        if(f.exists() && !f.isDirectory()) { 
-//            try {
-//                Scanner input = new Scanner(new File(filename));
-//                while (input.hasNextLine()) {
-//                    lines.add(input.nextLine().split(": "));
-//                }
-//                for (String[] line: lines) {
-//                    line[0] += ": ";
-//                    line[2] = ": " + line[2];
-//                }
-//                String[] now = {nameTxtField.getText() + ": ", "" + currentScore, ": " + highestTile()};
-//                lines.add(now);
-//                Comparator<String[]> custom;
-//                custom = new Comparator<String[]>() {
-//                    @Override
-//                    public int compare(String[] a1, String[] a2) {
-//                        return Integer.parseInt(a2[1]) - Integer.parseInt(a1[1]);
-//                    }
-//                }
-//                ;
-//                Collections.sort(lines, custom);
-//                input.close();
-//            } catch (FileNotFoundException ex) {
-//                ex.printStackTrace();
-//            }
-//        }
-//        else {
-//            String[] now = {nameTxtField.getText() + ": ", "" + currentScore, ": " + highestTile()};
-//            lines.add(now);
-//        }
-//        PrintWriter writer = null;
-//        try {
-//            writer = new PrintWriter(filename, "UTF-8");
-//            for (String[] s: lines) {
-//                for (String s1: s) {
-//                    writer.print(s1);
-//                }
-//                writer.println();
-//            }
-//        } catch (FileNotFoundException | UnsupportedEncodingException ex) {
-//            ex.printStackTrace();
-//        } finally {
-//            writer.close();
-//        }
-//        restart();
-//        updateText();
-//        updateColors();
-//        nameTxtField.setText("Enter your name");
-//        mainGameFrame.setVisible(false);
-//        updateHigh();
-//    }
-
+    private void handleMoves(int id){
+         updateBoard(id, true);
+         if (currentScore > highScore) {
+             highScore = currentScore;
+         }
+         updateText(); //Score changed, so text needs to be updated
+         if (checkWin()) {
+             mainGameFrame.setVisible(true);
+         }
+         if (checkLoss()) {
+             winLabel.setText("Game over!");
+             winLabel.setForeground(NUMBER_COLOR);
+             mainPanel.setBackground(new Color(238, 228, 218));
+             mainGameFrame.setVisible(true);
+         }
+         updateColors(); //If tiles changed numbers, we need to update the colors
+    }
     public static void printBoard(int[][] board) {
         for (int[] a: board) {
             for (int i : a)
                 System.out.print(i + " ");
             System.out.println();
         }
+        System.out.println();
     }
-    private void updateBoard(int n, boolean real) {
+    public static void updateBoard(int n, boolean real) {
     	int[][] before = copyBoard(board);
     	if (n == KeyEvent.VK_LEFT) {
             pushLeft();
@@ -907,7 +870,7 @@ public class GameGUI extends JFrame {
             rotateCCW();
         }
     }
-    private void addNewTile(int[][] before){
+    public static void addNewTile(int[][] before){
     	if (!Arrays.deepEquals(before, board)) {
             ArrayList<int[]> a = new ArrayList<int[]>();
             //Gather all Empty Tiles left on the board
@@ -930,7 +893,10 @@ public class GameGUI extends JFrame {
             }
         }
     }
-    private void joinTiles(boolean real){
+    public static void setBoard(int[][] originalBoard){
+    	board = originalBoard;
+    }
+    public static void joinTiles(boolean real){
     	for (int i = 0; i < 4; i++) {
             for (int j = 1; j < 4; j++) {
             	//If two consecutive numbers found, add them together
@@ -946,7 +912,7 @@ public class GameGUI extends JFrame {
             }
         }
     }
-    private void pushLeft() {
+    public static void pushLeft() {
         //move tiles with values as far left as possible
         for (int i = 0; i < 4; i++) {
             int[] row = new int[4];
@@ -963,7 +929,7 @@ public class GameGUI extends JFrame {
             board[i] = row;
         }
     }
-    private void rotateCW() {
+    public static void rotateCW() {
         int[][] rotated = new int[4][4];
         for (int r = 0; r < 4; r++) {
             for (int c = 0; c < 4; c++) {
@@ -972,7 +938,7 @@ public class GameGUI extends JFrame {
         }
         board = rotated;
     }
-    private void rotateCCW() {
+    public static void rotateCCW() {
         int[][] rotated = new int[4][4];
         for (int r = 0; r < 4; r++) {
         	for (int c = 0; c < 4; c++) {
@@ -981,7 +947,7 @@ public class GameGUI extends JFrame {
         }
         board = rotated;
     }
-    private static void restart() {
+    public static void restart() {
             currentScore = 0;
             board = new int[4][4];
             int[] pos1 = {(int) (Math.random() * 3), (int) (Math.random() * 3)};
@@ -995,7 +961,7 @@ public class GameGUI extends JFrame {
             board[pos1[0]][pos1[1]] = value1;
             board[pos2[0]][pos2[1]] = value2;
     }
-    private static int[][] copyBoard(int[][] board) {
+    public static int[][] copyBoard(int[][] board) {
         int[][] copy = new int[board.length][board[0].length];
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board[0].length; j++) {
@@ -1025,7 +991,7 @@ public class GameGUI extends JFrame {
         highScoreLabel.setText("" + highScore);
     }
     private void updateColors() {
-        JPanel[] numberPanelContainers = {jPanel0_0, jPanel0_1, jPanel0_2, jPanel0_3, jPanel1_0, jPanel1_1, jPanel1_2, jPanel20, jPanel2_0, jPanel2_1, jPanel2_2, jPanel2_3, jPanel3_0, jPanel3_1, jPanel3_2, jPanel3_3};
+        JPanel[] numberPanelContainers = {jPanel0_0, jPanel0_1, jPanel0_2, jPanel0_3, jPanel1_0, jPanel1_1, jPanel1_2, jPanel1_3, jPanel2_0, jPanel2_1, jPanel2_2, jPanel2_3, jPanel3_0, jPanel3_1, jPanel3_2, jPanel3_3};
         JLabel[] numbers = {jLbl0_0, jLbl0_1, jLbl0_2, jLbl0_3, jLbl1_0, jLbl1_1, jLbl1_2, jLbl1_3, jLbl2_0, jLbl2_1, jLbl2_2, jLbl2_3, jLbl3_0, jLbl3_1, jLbl3_2, jLbl3_3};
         for (int i = 0; i < numberPanelContainers.length; i++) {
             if (numbers[i].getText().equals("")) {
@@ -1081,7 +1047,7 @@ public class GameGUI extends JFrame {
             }
         }
     }
-    private boolean checkWin() {
+    public static boolean checkWin() {
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board[0].length; j++) {
                 if (board[i][j] == GOAL) 
@@ -1090,45 +1056,42 @@ public class GameGUI extends JFrame {
         }
         return false;
     }
-    private boolean checkLoss() {
-    	//Make copy of board since we are going to change the real board
-    	//This will be copied back to original board if a move was detected
-        int[][] before = copyBoard(board);
-        boolean leftChange = true;
-        //Make 'real' false so we don't make any moves, only check if the push left
-        //would change anything
-        updateBoard(KeyEvent.VK_LEFT, false);
-        if (Arrays.deepEquals(before, board)) 
-        	leftChange = false;
-        board = before;
-        boolean upChange = true;
-        updateBoard(KeyEvent.VK_UP, false);
-        if (Arrays.deepEquals(before, board))
-        	upChange = false;
-        board = before;
-        boolean rightChange = true;
-        updateBoard(KeyEvent.VK_RIGHT, false);
-        if (Arrays.deepEquals(before, board)) 
-        	rightChange = false;
-        board = before;
-        boolean downChange = true;
-        updateBoard(KeyEvent.VK_DOWN, false);
-        if (Arrays.deepEquals(before, board)) 
-        	downChange = false;
-        board = before;
-        return !(leftChange || upChange || rightChange || downChange);
-//        if (leftChange || upChange || rightChange || downChange) return false;
-//        return true;
+    public static boolean checkMove(int keyEvent){
+    	int[][] before = copyBoard(board);
+//    	System.out.println("Before change");
+//    	printBoard(board);
+//    	System.out.println();
+    	boolean change = true;
+    	updateBoard(keyEvent, false);
+    	if (Arrays.deepEquals(before, board))
+    		change = false;
+    	board = before;
+//    	System.out.println("After change");
+//    	printBoard(board);
+//    	System.out.println();
+    	return change;
     }
-    private int highestTile() {
-        int max = 0;
+    public static boolean checkLoss() {
+    	return !(	checkMove(KeyEvent.VK_LEFT) ||
+    				checkMove(KeyEvent.VK_UP) ||
+    				checkMove(KeyEvent.VK_RIGHT) ||
+    				checkMove(KeyEvent.VK_DOWN));
+    }
+    public static int[] highestTile() {
+        int maxRow = 0;
+        int maxCol = 0;
+        int maxNum = 0;
         for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board[0].length; j++) {
-                if (board[i][j] > max) 
-                	max = board[i][j];
+            for (int j = 0; j < board[i].length; j++) {
+                if (board[i][j] > maxNum){ 
+                	maxRow = i;
+                	maxCol = j;
+                	maxNum = board[i][j];
+            	}
             }
         }
-        return max;
+    	int[] maxStuff = new int[]{maxRow, maxCol, maxNum};
+        return maxStuff;
     }
     private int updateHigh() {
         try {
@@ -1147,6 +1110,76 @@ public class GameGUI extends JFrame {
             return 0;
         }
         return highScore;
+    }
+    private void ai(){
+    	//loop through every move, create copy of board beforehand
+    	//create a tree of every possible move (left branch has left, right, top, down; each of which has left, right, top, down)
+    	//calculate score by adding all values of board; minimax will choose the result with the highest score
+    	
+    	//highest tile in corner
+//    	while (!checkWin() && !checkLoss()){
+//    		if (System.currentTimeMillis() - lastTime > 3000){
+//	    		Runnable newThread = new Runnable(){
+//	    			public void run(){
+	    				int[][] copyBoard = copyBoard(board);
+    					State currentState = new State(board, 0);
+			    		createGameTree(currentState, 2);
+			    		board = copyBoard;
+			    		minimax(currentState);
+			    		int keyStroke = currentState.getChildren()[currentState.getChildren().length - 1].getLastMove();
+			    		handleMoves(keyStroke);
+			    		lastTime = System.currentTimeMillis();
+//	    			}
+//	    		};
+//	    		new Thread(newThread).start();
+//    		}
+//    	}
+    }
+    public static void createGameTree(State s, int d) {
+    	if(d==0){
+    		return;
+    	}
+    	if(s.getChildren().length==0)
+    		s.initializeChildren();
+    	for(State st:s.getChildren()){
+    		createGameTree(st, d-1);
+    	}
+    }
+    public void minimax(State s) {
+    	if(s.getValue()!=0){
+    		return;
+    	}
+    	if(s.getChildren().length == 0){
+    		s.setValue(evaluateBoard());
+    		return;
+    	}
+    	for(State st:s.getChildren()){
+    		minimax(st);
+    	}
+    	Arrays.sort(s.getChildren());
+    	s.setValue(s.getChildren()[s.getChildren().length - 1].getValue());
+    }
+    public static int evaluateBoard(){
+    	int score = 0;
+    	int sumOfTiles = 0, countFilled = 0;
+    	for (int r = 0; r < board.length; r++){
+    		for (int c = 0; c < board[r].length; c++){
+    			if (board[r][c] == 0){
+    				
+    			} else {
+    				sumOfTiles += board[r][c];
+    				countFilled++;
+    			}
+    		}
+    	}
+    	score += (int) (sumOfTiles / countFilled);
+    	score += (int) (sumOfTiles);
+    	int[] maxLocations = highestTile();
+    	if (maxLocations[0] == 0 && (maxLocations[1] == 0 || maxLocations[1] == 3)
+    	&& (maxLocations[1] == 3 && (maxLocations[0] == 0 || maxLocations[0] == 3))){ //Check corner
+    		score *= 2;
+    	}
+    	return score;
     }
 //    private void ai() {
 //        if (ai) {
@@ -1305,7 +1338,7 @@ public class GameGUI extends JFrame {
     private JPanel jPanel1_1;
     private JPanel jPanel1_2;
     private JPanel menuPanel;
-    private JPanel jPanel20;
+    private JPanel jPanel1_3;
     private JPanel scorePanel;
     private JPanel jPanel2_0;
     private JPanel jPanel2_1;

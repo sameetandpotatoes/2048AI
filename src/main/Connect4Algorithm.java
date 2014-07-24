@@ -6,21 +6,11 @@ public class Connect4Algorithm {
 	public static void main (String[] args){
 		gui = new ConnectFourGUI();
 	}
-//	private boolean checkWin(){
-//		return false;
-//	}
-//	private boolean checkHorizontal(){
-//		return false;		
-//	}
-//	private boolean checkVertical(){
-//		return false;
-//	}
-//	private boolean checkDiagonal(){
-//		return false;
-//	}
-//	private boolean checkDiagonalBack(){
-//		return false;
-//	}
+	private void ai(){
+		//search tree of every possible move, and then every possible move of user
+		//heuristic score based on number of consecutive tiles of user
+		//if its blank, higher; if its next to black piece, lower
+	}
 	private void resetGame(){
 		gui.resetGameBoard();
 	}
