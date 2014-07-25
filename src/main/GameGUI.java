@@ -12,9 +12,10 @@ import java.awt.event.MouseListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,45 +31,41 @@ import javax.swing.WindowConstants;
 import javax.swing.border.LineBorder;
 
 public class GameGUI extends JFrame {
-    private static final String filename = "scores.txt";
+    private static final String filename = "scores.dat";
     public static int[][] board = new int[4][4];
     private static int currentScore = 0;
     private static String fontStyle = "Arial";
-    private int highScore = updateHigh();
+    private int highScore = readScore();
     private static boolean ai_not_running = true;
     public static int GOAL = 2048;
     public static long lastTime = System.currentTimeMillis();
     public static Color NUMBER_COLOR = new Color(119, 110, 101);
     public static Color PANEL_BACKGROUND_COLOR = new Color(204, 192, 179);
     public static Color BORDER_COLOR = new Color(187, 173, 160);
-    
     public GameGUI() {
         initComponents();
         updateText();
-        readScore();
         mainGameFrame.setVisible(false);
         updateColors();
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
-            	System.out.println("Is this running");
-                updateHigh();
+            	updateHigh();
             }
         });
     }
-    private void readScore(){
-    	BufferedReader reader;
+    private int readScore(){
 		try {
-			reader = new BufferedReader(new FileReader(filename));
-			String line = null;
-	    	while ((line = reader.readLine()) != null) {
-	    		System.out.println(line);
-	    	}
-	    	reader.close();
+	        String content = new String(Files.readAllBytes(Paths.get(filename)));
+	        if (!content.equals("")){
+	        	System.out.println("Read " + Integer.parseInt(content) + " from file.");
+	        	return Integer.parseInt(content);
+	        }
 		} catch (FileNotFoundException e) {
-			throw new IllegalArgumentException("Scores.txt file not found");
+			throw new IllegalArgumentException("scores.dat file not found");
 		} catch(IOException ie){
-			throw new IllegalArgumentException("Scores.txt file not found");
+			throw new IllegalArgumentException("scores.dat file not found");
 		}
+		return 0;
     }
     public static int[][] getBoard(){
     	return board;
@@ -142,32 +139,30 @@ public class GameGUI extends JFrame {
 
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
 			}
 
 			@Override
 			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
 			}
 
 			@Override
 			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
 			}
 
 			@Override
 			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
+				updateHigh();
 				restart();
+		        java.awt.EventQueue.invokeLater(new Runnable() {
+		            public void run() {
+		                new GameGUI().setVisible(true);
+		            }
+		        });
+		        mainGameFrame.setVisible(true);
 			}
 
 			@Override
 			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
 			}
         	
         });
@@ -909,8 +904,8 @@ public class GameGUI extends JFrame {
             }
             //Shuffle arraylist around
             Collections.shuffle(a);
-            int random = (int) (Math.random() * 10);
-            if (random < 2) {
+            int random = (int) (Math.random() * 11);
+            if (random < 1) {
             	board[a.get(0)[0]][a.get(0)[1]] = 4;
             } else{
             	//Higher chance of getting a 2
@@ -1096,7 +1091,7 @@ public class GameGUI extends JFrame {
     				checkMove(KeyEvent.VK_RIGHT) ||
     				checkMove(KeyEvent.VK_DOWN));
     }
-    public static int[] highestTile() {
+    public static int[] highestTile(int[][] board) {
         int maxRow = 0;
         int maxCol = 0;
         int maxNum = 0;
@@ -1114,11 +1109,10 @@ public class GameGUI extends JFrame {
     }
     private int updateHigh() {
         try {
-        	FileWriter fileWriter = new FileWriter(filename);
-            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-            System.out.println("Writing high score");
-			bufferedWriter.write(highScore);
-			fileWriter.close();
+        	if (readScore() > highScore)
+        		highScore = readScore();
+        	System.out.println("Writing " + highScore + " to file");
+            Files.write(Paths.get("./" + filename), Integer.toString(highScore).getBytes());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -1135,9 +1129,10 @@ public class GameGUI extends JFrame {
 //	    		Runnable newThread = new Runnable(){
 //	    			public void run(){
 	    				int[][] copyBoard = copyBoard(board);
+//	    				System.out.println("ORIGINAL BOARD");
 //	    				printBoard(copyBoard);
     					State currentState = new State(board, 0);
-			    		createGameTree(currentState, 2, copyBoard);
+			    		createGameTree(currentState, 5, copyBoard);
 			    		board = copyBoard;
 			    		minimax(currentState);
 			    		int keyStroke = currentState.getChildren()[currentState.getChildren().length - 1].getLastMove();
@@ -1160,7 +1155,7 @@ public class GameGUI extends JFrame {
     		s.initializeChildren(originalBoard);
     	}
     	for(State st : s.getChildren()){
-//    		System.out.println("RECURSIVE\n");
+//    		System.out.println("PARENT with depth of " + d + "\n");
 //    		printBoard(st.getBoard());
     		createGameTree(st, d-1, st.getBoard());
     	}
@@ -1170,9 +1165,6 @@ public class GameGUI extends JFrame {
     		return;
     	}
     	if(s.getChildren().length == 0){
-//    		printBoard(board);
-//    		System.out.println();
-//    		printBoard(s.getBoard());
     		s.setValue(evaluateBoard(s.getBoard()));
     		return;
     	}
@@ -1197,6 +1189,7 @@ public class GameGUI extends JFrame {
     public static int evaluateBoard(int[][] board){
     	int score = 0;
     	int sumOfTiles = 0, countFilled = 0;
+//    	printBoard(board);
     	for (int r = 0; r < board.length; r++){
     		for (int c = 0; c < board[r].length; c++){
     			if (board[r][c] == 0){
@@ -1214,23 +1207,26 @@ public class GameGUI extends JFrame {
     	}
 //    	score += (int) (sumOfTiles);
 //    	score += (int) (sumOfTiles / countFilled);
-    	int[] maxLocations = highestTile();
+    	int[] maxLocations = highestTile(board);
     	if (maxLocations[0] == 0 && (maxLocations[1] == 0 || maxLocations[1] == 3)
     	|| (maxLocations[1] == 3 && (maxLocations[0] == 0 || maxLocations[0] == 3))){ //Check corner
     		score *= 2;
+    	} else{
+    		score /= 2;
     	}
     	if (countFilled == 16)
     		score /= 2;
-    	if (consecutiveTiles())
+    	if (consecutiveTiles(board))
     		score += 20000;
     	int scoreCopy = score;
     	score = (int) (scoreCopy + Math.log(scoreCopy) * (16 - countFilled));
     	
     	//ensure it is positive
     	score = Math.max(score, Math.min(scoreCopy, 1));
+//    	System.out.println(score);
     	return score;
     }
-    private static boolean consecutiveTiles(){
+    private static boolean consecutiveTiles(int[][] board){
     	for (int r = 0; r < board.length - 1; r++){
     		for (int c = 0; c < board[r].length -1; c++){
     			if ((board[r][c] != 0) && (board[r][c] == board[r][c+1] || board[r][c] == board[r+1][c])){
