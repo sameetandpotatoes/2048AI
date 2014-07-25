@@ -65,14 +65,33 @@ public class State implements Comparable<State>{
      *  initializes only this State's children; it does not recursively
      *  initialize all descendants. 
      */
-    public void initializeChildren() { 
+    public void initializeChildren(int[][] copyBoard) { 
     	Integer[] moves = getPossibleMoves();
+//    	System.out.println("INITIALIZE CHILDREN\n");
+//    	GameGUI.printBoard(copyBoard);
+		GameGUI.board = GameGUI.copyBoard(copyBoard);
     	State[] states = new State[moves.length];
     	for(int i = 0; i < moves.length; i++){
-    		int[][] copyBoard = GameGUI.copyBoard(board);
     		GameGUI.updateBoard(moves[i], false);
+//    		System.out.println("MOVED");
+//    		GameGUI.printBoard(GameGUI.getBoard());
     		states[i] = new State(GameGUI.getBoard(), moves[i]);
-    		GameGUI.setBoard(copyBoard);
+//    		System.out.println("ORIGINAL");
+//    		GameGUI.printBoard(copyBoard);
+
+    		GameGUI.board = GameGUI.copyBoard(copyBoard);
+//    		System.out.println("GAME");
+//    		GameGUI.printBoard(GameGUI.board);
+    		
+//    		GameGUI.updateBoard(moves[i], false);
+//    		System.out.println("MOVED BOARD");
+//    		GameGUI.printBoard(GameGUI.getBoard());
+//    		states[i] = new State(GameGUI.getBoard(), moves[i]);
+//    		System.out.println("ORIGINAL BOARD");
+//    		GameGUI.printBoard(copyBoard);
+//    		GameGUI.setBoard(copyBoard);
+//    		System.out.println("GAME BOARD");
+//    		GameGUI.printBoard(GameGUI.getBoard());
     	}
     	children = states;
     }

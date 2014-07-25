@@ -9,12 +9,15 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.io.File;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Scanner;
 
 import javax.swing.BorderFactory;
 import javax.swing.GroupLayout;
@@ -28,7 +31,7 @@ import javax.swing.border.LineBorder;
 
 public class GameGUI extends JFrame {
     private static final String filename = "scores.txt";
-    private static int[][] board = new int[4][4];
+    public static int[][] board = new int[4][4];
     private static int currentScore = 0;
     private static String fontStyle = "Arial";
     private int highScore = updateHigh();
@@ -42,8 +45,30 @@ public class GameGUI extends JFrame {
     public GameGUI() {
         initComponents();
         updateText();
+        readScore();
         mainGameFrame.setVisible(false);
         updateColors();
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+            	System.out.println("Is this running");
+                updateHigh();
+            }
+        });
+    }
+    private void readScore(){
+    	BufferedReader reader;
+		try {
+			reader = new BufferedReader(new FileReader(filename));
+			String line = null;
+	    	while ((line = reader.readLine()) != null) {
+	    		System.out.println(line);
+	    	}
+	    	reader.close();
+		} catch (FileNotFoundException e) {
+			throw new IllegalArgumentException("Scores.txt file not found");
+		} catch(IOException ie){
+			throw new IllegalArgumentException("Scores.txt file not found");
+		}
     }
     public static int[][] getBoard(){
     	return board;
@@ -1058,17 +1083,11 @@ public class GameGUI extends JFrame {
     }
     public static boolean checkMove(int keyEvent){
     	int[][] before = copyBoard(board);
-//    	System.out.println("Before change");
-//    	printBoard(board);
-//    	System.out.println();
     	boolean change = true;
     	updateBoard(keyEvent, false);
     	if (Arrays.deepEquals(before, board))
     		change = false;
     	board = before;
-//    	System.out.println("After change");
-//    	printBoard(board);
-//    	System.out.println();
     	return change;
     }
     public static boolean checkLoss() {
@@ -1095,20 +1114,14 @@ public class GameGUI extends JFrame {
     }
     private int updateHigh() {
         try {
-            Scanner input = new Scanner(new File(filename));
-            ArrayList<String[]> lines = new ArrayList<>();
-            while (input.hasNextLine())
-                lines.add(input.nextLine().split(": "));
-            for (String[] a: lines) {
-                if (Integer.parseInt(a[1]) > highScore) {
-                    highScore = Integer.parseInt(a[1]);
-                }
-            }
-            input.close();
-        } catch (FileNotFoundException ex) {
-            //return 0 if file doesn't exist; file will be created later
-            return 0;
-        }
+        	FileWriter fileWriter = new FileWriter(filename);
+            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+            System.out.println("Writing high score");
+			bufferedWriter.write(highScore);
+			fileWriter.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
         return highScore;
     }
     private void ai(){
@@ -1122,8 +1135,9 @@ public class GameGUI extends JFrame {
 //	    		Runnable newThread = new Runnable(){
 //	    			public void run(){
 	    				int[][] copyBoard = copyBoard(board);
+//	    				printBoard(copyBoard);
     					State currentState = new State(board, 0);
-			    		createGameTree(currentState, 2);
+			    		createGameTree(currentState, 2, copyBoard);
 			    		board = copyBoard;
 			    		minimax(currentState);
 			    		int keyStroke = currentState.getChildren()[currentState.getChildren().length - 1].getLastMove();
@@ -1135,22 +1149,31 @@ public class GameGUI extends JFrame {
 //    		}
 //    	}
     }
-    public static void createGameTree(State s, int d) {
-    	if(d==0){
-    		return;
-    	}
-    	if(s.getChildren().length==0)
-    		s.initializeChildren();
-    	for(State st:s.getChildren()){
-    		createGameTree(st, d-1);
-    	}
-    }
-    public void minimax(State s) {
-    	if(s.getValue()!=0){
+    public static void createGameTree(State s, int d, int[][] originalBoard) {
+    	if(d == 0){
     		return;
     	}
     	if(s.getChildren().length == 0){
-    		s.setValue(evaluateBoard());
+//    		System.out.println("CHILDREN");
+//    		System.out.println("ZERO CHILDREN\n");
+//    		printBoard(originalBoard);
+    		s.initializeChildren(originalBoard);
+    	}
+    	for(State st : s.getChildren()){
+//    		System.out.println("RECURSIVE\n");
+//    		printBoard(st.getBoard());
+    		createGameTree(st, d-1, st.getBoard());
+    	}
+    }
+    public void minimax(State s) {
+    	if(s.getValue() != 0){
+    		return;
+    	}
+    	if(s.getChildren().length == 0){
+//    		printBoard(board);
+//    		System.out.println();
+//    		printBoard(s.getBoard());
+    		s.setValue(evaluateBoard(s.getBoard()));
     		return;
     	}
     	for(State st:s.getChildren()){
@@ -1159,27 +1182,63 @@ public class GameGUI extends JFrame {
     	Arrays.sort(s.getChildren());
     	s.setValue(s.getChildren()[s.getChildren().length - 1].getValue());
     }
-    public static int evaluateBoard(){
+    private static int highestTileCol(int[] row){
+    	int max = 0, maxCol = -1;
+    	for (int col = 0; col < row.length; col++){
+    		if (row[col] > max){
+    			max = row[col];
+    			maxCol = col;
+    		}
+    	}
+    	if (max == 0 && maxCol == -1)
+    		maxCol = -1;
+    	return maxCol;
+    }
+    public static int evaluateBoard(int[][] board){
     	int score = 0;
     	int sumOfTiles = 0, countFilled = 0;
     	for (int r = 0; r < board.length; r++){
     		for (int c = 0; c < board[r].length; c++){
     			if (board[r][c] == 0){
-    				
+    				score += 20000;
     			} else {
     				sumOfTiles += board[r][c];
     				countFilled++;
     			}
+    			if (c == 0){
+					int highestTileCol = highestTileCol(board[r]);
+					if (highestTileCol == 0 || highestTileCol == 3)
+						score += 20000;
+    			}
     		}
     	}
-    	score += (int) (sumOfTiles / countFilled);
-    	score += (int) (sumOfTiles);
+//    	score += (int) (sumOfTiles);
+//    	score += (int) (sumOfTiles / countFilled);
     	int[] maxLocations = highestTile();
     	if (maxLocations[0] == 0 && (maxLocations[1] == 0 || maxLocations[1] == 3)
-    	&& (maxLocations[1] == 3 && (maxLocations[0] == 0 || maxLocations[0] == 3))){ //Check corner
+    	|| (maxLocations[1] == 3 && (maxLocations[0] == 0 || maxLocations[0] == 3))){ //Check corner
     		score *= 2;
     	}
+    	if (countFilled == 16)
+    		score /= 2;
+    	if (consecutiveTiles())
+    		score += 20000;
+    	int scoreCopy = score;
+    	score = (int) (scoreCopy + Math.log(scoreCopy) * (16 - countFilled));
+    	
+    	//ensure it is positive
+    	score = Math.max(score, Math.min(scoreCopy, 1));
     	return score;
+    }
+    private static boolean consecutiveTiles(){
+    	for (int r = 0; r < board.length - 1; r++){
+    		for (int c = 0; c < board[r].length -1; c++){
+    			if ((board[r][c] != 0) && (board[r][c] == board[r][c+1] || board[r][c] == board[r+1][c])){
+    				return true;
+    			}
+    		}
+    	}
+    	return false;
     }
 //    private void ai() {
 //        if (ai) {
