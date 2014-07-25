@@ -36,7 +36,7 @@ public class GameGUI extends JFrame {
     private static int currentScore = 0;
     private static String fontStyle = "Arial";
     private int highScore = readScore();
-    private static boolean ai_not_running = true;
+    private int aiDepth = 3;
     public static int GOAL = 2048;
     public static long lastTime = System.currentTimeMillis();
     public static Color NUMBER_COLOR = new Color(119, 110, 101);
@@ -52,6 +52,9 @@ public class GameGUI extends JFrame {
             	updateHigh();
             }
         });
+    }
+    public static int getCurrentScore(){
+    	return currentScore;
     }
     private int readScore(){
 		try {
@@ -832,10 +835,10 @@ public class GameGUI extends JFrame {
     private void arrowKeyHandler(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_arrowKeyHandler
 //        if (ai_not_running) ai();
         int id = evt.getKeyCode();
-        handleMoves(id);
+        handleMoves(id, false);
     }
-    private void handleMoves(int id){
-         updateBoard(id, true);
+    private void handleMoves(int id, boolean ai){
+         updateBoard(id, true, ai);
          if (currentScore > highScore) {
              highScore = currentScore;
          }
@@ -843,7 +846,7 @@ public class GameGUI extends JFrame {
          if (checkWin()) {
              mainGameFrame.setVisible(true);
          }
-         if (checkLoss()) {
+         if (checkLoss(ai)) {
              winLabel.setText("Game over!");
              winLabel.setForeground(NUMBER_COLOR);
              mainPanel.setBackground(new Color(238, 228, 218));
@@ -859,25 +862,26 @@ public class GameGUI extends JFrame {
         }
         System.out.println();
     }
-    public static void updateBoard(int n, boolean real) {
+    public static void updateBoard(int n, boolean real, boolean ai) {
     	int[][] before = copyBoard(board);
     	if (n == KeyEvent.VK_LEFT) {
             pushLeft();
             //check tiles with x > 0, from left to right to see if they collapse
             joinTiles(real);
             pushLeft();
-            addNewTile(before);
+            if (!ai)
+            	addNewTile(before);
         }
         else if (n == KeyEvent.VK_UP) {
             rotateCCW();
-            updateBoard(KeyEvent.VK_LEFT, real);
+            updateBoard(KeyEvent.VK_LEFT, real, ai);
             //Reverse effects
             rotateCW();
         }
         else if (n == KeyEvent.VK_RIGHT) {
             rotateCCW();
             rotateCCW();
-            updateBoard(KeyEvent.VK_LEFT, real);
+            updateBoard(KeyEvent.VK_LEFT, real, ai);
             //Reverse effects
             rotateCW();
             rotateCW();
@@ -885,7 +889,7 @@ public class GameGUI extends JFrame {
         }
         else if (n == KeyEvent.VK_DOWN) {
             rotateCW();
-            updateBoard(KeyEvent.VK_LEFT, real);
+            updateBoard(KeyEvent.VK_LEFT, real, ai);
             //Reverse effects
             rotateCCW();
         }
@@ -1076,20 +1080,20 @@ public class GameGUI extends JFrame {
         }
         return false;
     }
-    public static boolean checkMove(int keyEvent){
+    public static boolean checkMove(int keyEvent, boolean ai){
     	int[][] before = copyBoard(board);
     	boolean change = true;
-    	updateBoard(keyEvent, false);
+    	updateBoard(keyEvent, false, ai);
     	if (Arrays.deepEquals(before, board))
     		change = false;
     	board = before;
     	return change;
     }
-    public static boolean checkLoss() {
-    	return !(	checkMove(KeyEvent.VK_LEFT) ||
-    				checkMove(KeyEvent.VK_UP) ||
-    				checkMove(KeyEvent.VK_RIGHT) ||
-    				checkMove(KeyEvent.VK_DOWN));
+    public static boolean checkLoss(boolean ai) {
+    	return !(	checkMove(KeyEvent.VK_LEFT, ai) ||
+    				checkMove(KeyEvent.VK_UP, ai) ||
+    				checkMove(KeyEvent.VK_RIGHT, ai) ||
+    				checkMove(KeyEvent.VK_DOWN, ai));
     }
     public static int[] highestTile(int[][] board) {
         int maxRow = 0;
@@ -1132,12 +1136,24 @@ public class GameGUI extends JFrame {
 //	    				System.out.println("ORIGINAL BOARD");
 //	    				printBoard(copyBoard);
     					State currentState = new State(board, 0);
-			    		createGameTree(currentState, 5, copyBoard);
+			    		createGameTree(currentState, aiDepth, copyBoard);
 			    		board = copyBoard;
 			    		minimax(currentState);
 			    		int keyStroke = currentState.getChildren()[currentState.getChildren().length - 1].getLastMove();
-			    		handleMoves(keyStroke);
-			    		lastTime = System.currentTimeMillis();
+			    		handleMoves(keyStroke, false);
+			    		int countEmpty = 0;
+			    		for (int r = 0; r < board.length; r++){
+			        		for (int c = 0; c < board[r].length; c++){
+			        			if (board[r][c] == 0){
+			        				countEmpty++;
+			        			}
+			        		}
+			        	}
+			    		if (countEmpty <= 3)
+			    			aiDepth = 4;
+			    		else
+			    			aiDepth = 3;
+//			    		lastTime = System.currentTimeMillis();
 //	    			}
 //	    		};
 //	    		new Thread(newThread).start();
@@ -1152,7 +1168,7 @@ public class GameGUI extends JFrame {
 //    		System.out.println("CHILDREN");
 //    		System.out.println("ZERO CHILDREN\n");
 //    		printBoard(originalBoard);
-    		s.initializeChildren(originalBoard);
+    		s.initializeChildren(originalBoard, d);
     	}
     	for(State st : s.getChildren()){
 //    		System.out.println("PARENT with depth of " + d + "\n");
@@ -1165,13 +1181,12 @@ public class GameGUI extends JFrame {
     		return;
     	}
     	if(s.getChildren().length == 0){
-    		s.setValue(evaluateBoard(s.getBoard()));
+    		s.setValue(evaluateBoard(s.getBoard(),s.getScore()));
     		return;
     	}
     	for(State st:s.getChildren()){
     		minimax(st);
     	}
-    	Arrays.sort(s.getChildren());
     	s.setValue(s.getChildren()[s.getChildren().length - 1].getValue());
     }
     private static int highestTileCol(int[] row){
@@ -1182,18 +1197,26 @@ public class GameGUI extends JFrame {
     			maxCol = col;
     		}
     	}
-    	if (max == 0 && maxCol == -1)
-    		maxCol = -1;
     	return maxCol;
     }
-    public static int evaluateBoard(int[][] board){
+    private static int highestTileRow(int col, int[][] board){
+    	int max = 0, maxRow = -1;
+    	for (int row = 0; row < board.length; row++){
+    		if (board[row][col] > max){
+    			max = board[row][col];
+    			maxRow = row;
+    		}
+    	}
+    	return maxRow;
+    }
+    public static int evaluateBoard(int[][] board, int stateScore){
     	int score = 0;
     	int sumOfTiles = 0, countFilled = 0;
 //    	printBoard(board);
     	for (int r = 0; r < board.length; r++){
     		for (int c = 0; c < board[r].length; c++){
     			if (board[r][c] == 0){
-    				score += 20000;
+    				score += 10000;
     			} else {
     				sumOfTiles += board[r][c];
     				countFilled++;
@@ -1201,7 +1224,13 @@ public class GameGUI extends JFrame {
     			if (c == 0){
 					int highestTileCol = highestTileCol(board[r]);
 					if (highestTileCol == 0 || highestTileCol == 3)
-						score += 20000;
+						score += 10000;
+    			}
+    			if (r == 0){
+    				int highestTileRow = highestTileRow(c, board);
+    				if (highestTileRow == 0 || highestTileRow == 3){
+    					score += 10000;
+    				}
     			}
     		}
     	}
@@ -1210,28 +1239,50 @@ public class GameGUI extends JFrame {
     	int[] maxLocations = highestTile(board);
     	if (maxLocations[0] == 0 && (maxLocations[1] == 0 || maxLocations[1] == 3)
     	|| (maxLocations[1] == 3 && (maxLocations[0] == 0 || maxLocations[0] == 3))){ //Check corner
-    		score *= 2;
+    		score *= 5;
     	} else{
-    		score /= 2;
+    		score /= 10;
     	}
-    	if (countFilled == 16)
-    		score /= 2;
+    	
+    	if (countFilled >= 14)
+    		score /= 5;
     	if (consecutiveTiles(board))
-    		score += 20000;
-    	int scoreCopy = score;
-    	score = (int) (scoreCopy + Math.log(scoreCopy) * (16 - countFilled));
+    		score += 10000;
+    	score += (stateScore - currentScore)*5000;
+//    	System.out.println(score);
+//    	score += (int) (stateScore + Math.log(stateScore) * (16 - countFilled));
     	
     	//ensure it is positive
-    	score = Math.max(score, Math.min(scoreCopy, 1));
+//    	score = Math.max(score, Math.min(stateScore, 1));
 //    	System.out.println(score);
+    	System.out.println(score);
     	return score;
     }
+//    private static boolean consecutiveTiles(int[][] board){
+//    	for (int r = 0; r < board.length - 1; r++){
+//    		for (int c = 0; c < board[r].length -1; c++){
+//    			if ((board[r][c] != 0) && (board[r][c] == board[r][c+1] || board[r][c] == board[r+1][c])){
+//    				return true;
+//    			}
+//    		}
+//    	}
+//    	return false;
+//    }
+    
     private static boolean consecutiveTiles(int[][] board){
-    	for (int r = 0; r < board.length - 1; r++){
-    		for (int c = 0; c < board[r].length -1; c++){
-    			if ((board[r][c] != 0) && (board[r][c] == board[r][c+1] || board[r][c] == board[r+1][c])){
+    	for (int r = 0; r < board.length; r++){
+    		for (int c = 0; c < board[r].length; c++){
+    			int restR = r + 1;
+    			while (restR < board.length && board[restR][c] == 0)
+    				restR++;
+    			if (restR != board.length && board[restR][c] == board[r][c])
     				return true;
-    			}
+    			
+    			int restC = c + 1;
+    			while (restC < board[r].length && board[r][restC] == 0)
+    				restC++;
+    			if (restC != board.length && board[r][restC] == board[r][c])
+    				return true;
     		}
     	}
     	return false;
