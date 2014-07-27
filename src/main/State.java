@@ -76,20 +76,19 @@ public class State implements Comparable<State>{
     	ArrayList<State> states1 = new ArrayList<State>();
     	for(int i = 0; i < moves.length; i++){
     		GameGUI.updateBoard(moves[i], false, true);
-    		ArrayList<State> extraStates = this.getPossibleRandomMoves(moves[i]);
-//    		if (i==0){
-//    			System.out.println("MOVED");
-//    			GameGUI.printBoard(GameGUI.getBoard());
-//    		}
+    		ArrayList<State> extraStates = this.getPossibleRandomMoves(moves[i], GameGUI.getBoard());
+//    		System.out.println("MOVED");
+//    		GameGUI.printBoard(GameGUI.getBoard());
     		State rohitsState = new State(GameGUI.getBoard(), moves[i]);
-    		rohitsState.actualScore = GameGUI.getCurrentScore();
+//    		System.out.println("CURRENT SCORE: " + GameGUI.getExpectedScore());
+//    		GameGUI.printBoard(GameGUI.getBoard());
+    		rohitsState.actualScore = GameGUI.getExpectedScore();
     		states1.add(rohitsState);
+    		
     		for (State extraState : extraStates)
     		{	
-    			extraState.actualScore = GameGUI.getCurrentScore();
+    			extraState.actualScore = GameGUI.getExpectedScore();
     			states1.add(extraState);
-//    			System.out.println("EXTRA MOVE");
-//    			GameGUI.printBoard(extraState.getBoard());
     		}
     		
 //    		states[i] = new State(GameGUI.getBoard(), moves[i]);
@@ -100,7 +99,7 @@ public class State implements Comparable<State>{
     		GameGUI.board = GameGUI.copyBoard(copyBoard);
 //    		System.out.println("GAME");
 //    		GameGUI.printBoard(GameGUI.board);
-    		
+    		GameGUI.expectedScore = GameGUI.currentScore;
     	}
     	//children = states
     	children = states1.toArray(new State[states1.size()]);
@@ -117,7 +116,7 @@ public class State implements Comparable<State>{
     		moves.add(40);
     	return moves.toArray(new Integer[moves.size()]);
     } 
-    private ArrayList<State> getPossibleRandomMoves(int lastMove){
+    private ArrayList<State> getPossibleRandomMoves(int lastMove, int[][] board){
     	int[][] originalBoard = GameGUI.copyBoard(board);
     	ArrayList<State> posRandomMoves = new ArrayList<State>();
     	for (int r = 0; r < board.length; r++){

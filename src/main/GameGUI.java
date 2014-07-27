@@ -27,18 +27,22 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingWorker;
 import javax.swing.WindowConstants;
 import javax.swing.border.LineBorder;
 
 public class GameGUI extends JFrame {
     private static final String filename = "scores.dat";
     public static int[][] board = new int[4][4];
-    private static int currentScore = 0;
+    public static int currentScore = 0;
     private static String fontStyle = "Arial";
     private int highScore = readScore();
-    private int aiDepth = 3;
+    private static boolean ai_running = false;
+    private static final int AI_EASY = 3;
+    private static final int AI_HARD = 4;
+    private static int aiDepth = AI_EASY;
+    public static int expectedScore = 0;
     public static int GOAL = 2048;
-    public static long lastTime = System.currentTimeMillis();
     public static Color NUMBER_COLOR = new Color(119, 110, 101);
     public static Color PANEL_BACKGROUND_COLOR = new Color(204, 192, 179);
     public static Color BORDER_COLOR = new Color(187, 173, 160);
@@ -55,6 +59,9 @@ public class GameGUI extends JFrame {
     }
     public static int getCurrentScore(){
     	return currentScore;
+    }
+    public static int getExpectedScore(){
+    	return expectedScore;
     }
     private int readScore(){
 		try {
@@ -161,7 +168,7 @@ public class GameGUI extends JFrame {
 		                new GameGUI().setVisible(true);
 		            }
 		        });
-		        mainGameFrame.setVisible(true);
+		        mainGameFrame.setVisible(false);
 			}
 
 			@Override
@@ -742,7 +749,12 @@ public class GameGUI extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				// TODO Auto-generated method stub
-				ai();
+				if (!ai_running){
+					ai_running = true;
+					ai();
+				} else{
+					ai_running = false;
+				}
 			}
         	
         });
@@ -853,6 +865,8 @@ public class GameGUI extends JFrame {
              mainGameFrame.setVisible(true);
          }
          updateColors(); //If tiles changed numbers, we need to update the colors
+         if (ai_running)
+        	 ai();
     }
     public static void printBoard(int[][] board) {
         for (int[] a: board) {
@@ -931,6 +945,7 @@ public class GameGUI extends JFrame {
                     if (real) {
                         currentScore += board[i][j-1];
                     }
+                    expectedScore += board[i][j-1];
                     board[i][j] = 0; //temporarily leave a 0 which will go away when we push again
                 }
             }
@@ -973,6 +988,7 @@ public class GameGUI extends JFrame {
     }
     public static void restart() {
             currentScore = 0;
+            expectedScore = 0;
             board = new int[4][4];
             int[] pos1 = {(int) (Math.random() * 3), (int) (Math.random() * 3)};
             int value1 = ((int) (Math.random() * 2) + 1) * 2;
@@ -1123,56 +1139,42 @@ public class GameGUI extends JFrame {
         return highScore;
     }
     private void ai(){
-    	//loop through every move, create copy of board beforehand
-    	//create a tree of every possible move (left branch has left, right, top, down; each of which has left, right, top, down)
-    	//calculate score by adding all values of board; minimax will choose the result with the highest score
-    	
-    	//highest tile in corner
-//    	while (!checkWin() && !checkLoss()){
-//    		if (System.currentTimeMillis() - lastTime > 3000){
-//	    		Runnable newThread = new Runnable(){
-//	    			public void run(){
-	    				int[][] copyBoard = copyBoard(board);
-//	    				System.out.println("ORIGINAL BOARD");
-//	    				printBoard(copyBoard);
-    					State currentState = new State(board, 0);
-			    		createGameTree(currentState, aiDepth, copyBoard);
-			    		board = copyBoard;
-			    		minimax(currentState);
-			    		int keyStroke = currentState.getChildren()[currentState.getChildren().length - 1].getLastMove();
-			    		handleMoves(keyStroke, false);
-			    		int countEmpty = 0;
-			    		for (int r = 0; r < board.length; r++){
-			        		for (int c = 0; c < board[r].length; c++){
-			        			if (board[r][c] == 0){
-			        				countEmpty++;
-			        			}
-			        		}
-			        	}
-			    		if (countEmpty <= 3)
-			    			aiDepth = 4;
-			    		else
-			    			aiDepth = 3;
-//			    		lastTime = System.currentTimeMillis();
-//	    			}
-//	    		};
-//	    		new Thread(newThread).start();
-//    		}
-//    	}
+      new SwingWorker<Integer, Integer>() {
+    	  protected Integer doInBackground() {
+			int[][] copyBoard = copyBoard(board);
+			
+			State currentState = new State(board, 0);
+    		createGameTree(currentState, aiDepth, copyBoard);
+    		board = copyBoard;
+    		minimax(currentState);
+//    		System.out.println("HIGHEST: " + currentState.getValue());
+    		int keyStroke = currentState.getChildren()[currentState.getChildren().length - 1].getLastMove();
+    		handleMoves(keyStroke, false);
+    		int countEmpty = 0;
+    		for (int r = 0; r < board.length; r++){
+        		for (int c = 0; c < board[r].length; c++){
+        			if (board[r][c] == 0){
+        				countEmpty++;
+        			}
+        		}
+        	}
+    		if (countEmpty <= 3)
+    			aiDepth = AI_HARD;
+    		else
+    			aiDepth = AI_EASY;
+    		expectedScore = currentScore;
+    		return 0;
+    	  }
+      }.execute();
     }
     public static void createGameTree(State s, int d, int[][] originalBoard) {
     	if(d == 0){
     		return;
     	}
     	if(s.getChildren().length == 0){
-//    		System.out.println("CHILDREN");
-//    		System.out.println("ZERO CHILDREN\n");
-//    		printBoard(originalBoard);
     		s.initializeChildren(originalBoard, d);
     	}
     	for(State st : s.getChildren()){
-//    		System.out.println("PARENT with depth of " + d + "\n");
-//    		printBoard(st.getBoard());
     		createGameTree(st, d-1, st.getBoard());
     	}
     }
@@ -1187,6 +1189,11 @@ public class GameGUI extends JFrame {
     	for(State st:s.getChildren()){
     		minimax(st);
     	}
+    	Arrays.sort(s.getChildren());
+//    	System.out.println("Printing Children");
+//    	for (State state : s.getChildren()){
+//    		System.out.println(state.getValue());
+//    	}
     	s.setValue(s.getChildren()[s.getChildren().length - 1].getValue());
     }
     private static int highestTileCol(int[] row){
@@ -1212,7 +1219,6 @@ public class GameGUI extends JFrame {
     public static int evaluateBoard(int[][] board, int stateScore){
     	int score = 0;
     	int sumOfTiles = 0, countFilled = 0;
-//    	printBoard(board);
     	for (int r = 0; r < board.length; r++){
     		for (int c = 0; c < board[r].length; c++){
     			if (board[r][c] == 0){
@@ -1223,52 +1229,87 @@ public class GameGUI extends JFrame {
     			}
     			if (c == 0){
 					int highestTileCol = highestTileCol(board[r]);
-					if (highestTileCol == 0 || highestTileCol == 3)
+					if (highestTileCol == 0 || highestTileCol == 3){
+//						System.out.println("HighestTileCol for " + r);
 						score += 10000;
+					}
     			}
     			if (r == 0){
     				int highestTileRow = highestTileRow(c, board);
     				if (highestTileRow == 0 || highestTileRow == 3){
+//    					System.out.println("HighestTileRow for " + c);
     					score += 10000;
     				}
     			}
     		}
     	}
-//    	score += (int) (sumOfTiles);
-//    	score += (int) (sumOfTiles / countFilled);
+    	int smoothnessHeuristic = measureSmoothness(board);
+    	if (smoothnessHeuristic >= 8)
+    		score /= 10;
     	int[] maxLocations = highestTile(board);
     	if (maxLocations[0] == 0 && (maxLocations[1] == 0 || maxLocations[1] == 3)
     	|| (maxLocations[1] == 3 && (maxLocations[0] == 0 || maxLocations[0] == 3))){ //Check corner
-    		score *= 5;
+    		score += 20000;
+    		if (smoothnessHeuristic == 0)
+    			score *= 2;
     	} else{
+//    		score = 100;
+//    		score = 10;
     		score /= 10;
     	}
     	
-    	if (countFilled >= 14)
+    	if (countFilled >= 14){
+//    		score /= 5;
     		score /= 5;
-    	if (consecutiveTiles(board))
-    		score += 10000;
-    	score += (stateScore - currentScore)*5000;
-//    	System.out.println(score);
-//    	score += (int) (stateScore + Math.log(stateScore) * (16 - countFilled));
+    	}
+//    	if (consecutiveTiles(board)){
+//    		score *= 2;
+//    	}
     	
-    	//ensure it is positive
-//    	score = Math.max(score, Math.min(stateScore, 1));
+    	
+//    	System.out.println("State: " + stateScore + "\nCurrent: " + currentScore);
+    	
+//    	System.out.print("CS: " + currentScore);
+//    	System.out.println("SS: " + stateScore);
+//    	score += (stateScore - currentScore) * 1000;
+    	
+//    	score += (int) ((stateScore + Math.log(stateScore)) * (16 - countFilled));
 //    	System.out.println(score);
-    	System.out.println(score);
+//    	printBoard(board);
     	return score;
     }
-//    private static boolean consecutiveTiles(int[][] board){
+    private static int measureSmoothness(int[][] board){
+    	int[] maxLoc = highestTile(board);
+    	int newColHorizontal = 0;
+    	int newRowVertical = 0;
+    	if (maxLoc[0] == 0){
+    		newRowVertical++;
+    	} else if (maxLoc[0] == 3){
+    		newRowVertical = 2;
+    	}
+    	if (maxLoc[1] == 0){
+    		newColHorizontal++;
+    	} else if (maxLoc[1] == 3){
+    		newColHorizontal = 2;
+    	}
+    	int smoothHorizontal = board[maxLoc[0]][maxLoc[1]] - board[newRowVertical][maxLoc[1]];
+    	int smoothVertical = board[maxLoc[0]][maxLoc[1]] - board[maxLoc[0]][newColHorizontal];
+    	return Math.max(smoothHorizontal, smoothVertical);
+//    	int maxDifferenceBetweenTiles = 0;
 //    	for (int r = 0; r < board.length - 1; r++){
-//    		for (int c = 0; c < board[r].length -1; c++){
-//    			if ((board[r][c] != 0) && (board[r][c] == board[r][c+1] || board[r][c] == board[r+1][c])){
-//    				return true;
+//    		for (int c = 0; c < board[r].length - 1; c++){
+//    			if (board[r][c] != 0){
+//	    			int subHorizontal = board[r][c+1] - board[r][c];
+//	    			int subVertical = board[r+1][c] - board[r][c];
+//	    			if (subHorizontal > maxDifferenceBetweenTiles)
+//	    				maxDifferenceBetweenTiles = subHorizontal;
+//	    			else if (subVertical > maxDifferenceBetweenTiles)
+//	    				maxDifferenceBetweenTiles = subVertical;
 //    			}
 //    		}
 //    	}
-//    	return false;
-//    }
-    
+//    	return maxDifferenceBetweenTiles;
+    }
     private static boolean consecutiveTiles(int[][] board){
     	for (int r = 0; r < board.length; r++){
     		for (int c = 0; c < board[r].length; c++){
