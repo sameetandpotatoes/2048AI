@@ -844,8 +844,7 @@ public class GameGUI extends JFrame {
         pack();
     }
 
-    private void arrowKeyHandler(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_arrowKeyHandler
-//        if (ai_not_running) ai();
+    private void arrowKeyHandler(java.awt.event.KeyEvent evt) {
         int id = evt.getKeyCode();
         handleMoves(id, false);
     }
@@ -1142,7 +1141,7 @@ public class GameGUI extends JFrame {
       new SwingWorker<Integer, Integer>() {
     	  protected Integer doInBackground() {
 			int[][] copyBoard = copyBoard(board);
-			
+//			printBoard(board);
 			State currentState = new State(board, 0);
     		createGameTree(currentState, aiDepth, copyBoard);
     		board = copyBoard;
@@ -1190,10 +1189,6 @@ public class GameGUI extends JFrame {
     		minimax(st);
     	}
     	Arrays.sort(s.getChildren());
-//    	System.out.println("Printing Children");
-//    	for (State state : s.getChildren()){
-//    		System.out.println(state.getValue());
-//    	}
     	s.setValue(s.getChildren()[s.getChildren().length - 1].getValue());
     }
     private static int highestTileCol(int[] row){
@@ -1218,7 +1213,7 @@ public class GameGUI extends JFrame {
     }
     public static int evaluateBoard(int[][] board, int stateScore){
     	int score = 0;
-    	int sumOfTiles = 0, countFilled = 0;
+    	int sumOfTiles = 0, countFilled = 0, sumDifference = 1;
     	for (int r = 0; r < board.length; r++){
     		for (int c = 0; c < board[r].length; c++){
     			if (board[r][c] == 0){
@@ -1241,60 +1236,96 @@ public class GameGUI extends JFrame {
     					score += 10000;
     				}
     			}
+    			if (c != 3){
+    				//check right
+    				if (board[r][c+1] != 0 && board[r][c] != 0){
+    					sumDifference += Math.abs(board[r][c+1] - board[r][c]) / (Math.min(board[r][c+1], board[r][c]));
+    				}
+    			}
+    			if (r != 3){
+    				//check down
+    				if (board[r+1][c] != 0 && board[r][c] != 0){
+    					sumDifference += Math.abs(board[r+1][c] - board[r][c]) / Math.min(board[r+1][c], board[r][c]);
+    				}
+    			}
     		}
     	}
-    	int smoothnessHeuristic = measureSmoothness(board);
-    	if (smoothnessHeuristic >= 8)
-    		score /= 10;
+//    	int smoothnessHeuristic = measureSmoothness(board);
+//    	if (smoothnessHeuristic >= 8)
+//    		score /= 10;
+    	score /= Math.ceil(sumDifference/countFilled);
+    	
     	int[] maxLocations = highestTile(board);
     	if (maxLocations[0] == 0 && (maxLocations[1] == 0 || maxLocations[1] == 3)
     	|| (maxLocations[1] == 3 && (maxLocations[0] == 0 || maxLocations[0] == 3))){ //Check corner
-    		score += 20000;
-    		if (smoothnessHeuristic == 0)
-    			score *= 2;
+//    		score += 20000;
+//    		score += 40000;
+    		
+    		score *= 2;
+//    		score *= 3;
+    		
+//    		if (smoothnessHeuristic == 0)
+//    			score *= 2;
+    		
     	} else{
-//    		score = 100;
-//    		score = 10;
-    		score /= 10;
+//    		score /= 10;
+    		score /= 15;
+//    		score /= 20;
     	}
     	
-    	if (countFilled >= 14){
+    	if (countFilled >= 13){
 //    		score /= 5;
-    		score /= 5;
+    		score /= 10;
     	}
 //    	if (consecutiveTiles(board)){
 //    		score *= 2;
 //    	}
     	
-    	
 //    	System.out.println("State: " + stateScore + "\nCurrent: " + currentScore);
     	
-//    	System.out.print("CS: " + currentScore);
-//    	System.out.println("SS: " + stateScore);
 //    	score += (stateScore - currentScore) * 1000;
     	
 //    	score += (int) ((stateScore + Math.log(stateScore)) * (16 - countFilled));
-//    	System.out.println(score);
 //    	printBoard(board);
     	return score;
     }
     private static int measureSmoothness(int[][] board){
-    	int[] maxLoc = highestTile(board);
-    	int newColHorizontal = 0;
-    	int newRowVertical = 0;
-    	if (maxLoc[0] == 0){
-    		newRowVertical++;
-    	} else if (maxLoc[0] == 3){
-    		newRowVertical = 2;
+    	int sumDifference = 0;
+    	for (int r = 0; r < board.length; r++){
+    		for (int c = 0; c < board[r].length; c++){
+    			if (c != 3){
+    				//check right
+    				if (board[r][c+1] != 0 && board[r][c] != 0){
+    					sumDifference += Math.abs(board[r][c+1] - board[r][c]) / (Math.min(board[r][c+1], board[r][c]));
+    				}
+    			}
+    			if (r != 3){
+    				//check down
+    				if (board[r+1][c] != 0 && board[r][c] != 0){
+    					sumDifference += Math.abs(board[r+1][c] - board[r][c]) / Math.min(board[r+1][c], board[r][c]);
+    				}
+    			}
+    		}
     	}
-    	if (maxLoc[1] == 0){
-    		newColHorizontal++;
-    	} else if (maxLoc[1] == 3){
-    		newColHorizontal = 2;
-    	}
-    	int smoothHorizontal = board[maxLoc[0]][maxLoc[1]] - board[newRowVertical][maxLoc[1]];
-    	int smoothVertical = board[maxLoc[0]][maxLoc[1]] - board[maxLoc[0]][newColHorizontal];
-    	return Math.max(smoothHorizontal, smoothVertical);
+    	return sumDifference;
+    	
+//    	int[] maxLoc = highestTile(board);
+//    	int newColHorizontal = 0;
+//    	int newRowVertical = 0;
+//    	if (maxLoc[0] == 0){
+//    		newRowVertical++;
+//    	} else if (maxLoc[0] == 3){
+//    		newRowVertical = 2;
+//    	}
+//    	if (maxLoc[1] == 0){
+//    		newColHorizontal++;
+//    	} else if (maxLoc[1] == 3){
+//    		newColHorizontal = 2;
+//    	}
+//    	int smoothHorizontal = board[maxLoc[0]][maxLoc[1]] - board[newRowVertical][maxLoc[1]];
+//    	int smoothVertical = board[maxLoc[0]][maxLoc[1]] - board[maxLoc[0]][newColHorizontal];
+//    	return Math.max(smoothHorizontal, smoothVertical);
+    	
 //    	int maxDifferenceBetweenTiles = 0;
 //    	for (int r = 0; r < board.length - 1; r++){
 //    		for (int c = 0; c < board[r].length - 1; c++){

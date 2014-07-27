@@ -101,7 +101,7 @@ public class State implements Comparable<State>{
 //    		GameGUI.printBoard(GameGUI.board);
     		GameGUI.expectedScore = GameGUI.currentScore;
     	}
-    	//children = states
+
     	children = states1.toArray(new State[states1.size()]);
     }
     private Integer[] getPossibleMoves(){
