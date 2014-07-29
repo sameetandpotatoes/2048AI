@@ -1,6 +1,7 @@
 package main;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /** An instance represents the state of a game of Connect Four. */
 public class State implements Comparable<State>{
@@ -70,31 +71,22 @@ public class State implements Comparable<State>{
      *  initializes only this State's children; it does not recursively
      *  initialize all descendants. 
      */
-    public void initializeChildren(int[][] copyBoard, int depth) { 
+    public void initializeChildren(int[][] copyBoard) { 
     	Integer[] moves = getPossibleMoves();
 		GameGUI.board = GameGUI.copyBoard(copyBoard);
     	ArrayList<State> states1 = new ArrayList<State>();
     	for(int i = 0; i < moves.length; i++){
     		GameGUI.updateBoard(moves[i], false, true);
-    		ArrayList<State> extraStates = this.getPossibleRandomMoves(moves[i], GameGUI.getBoard());
 //    		System.out.println("MOVED");
 //    		GameGUI.printBoard(GameGUI.getBoard());
     		State rohitsState = new State(GameGUI.getBoard(), moves[i]);
 //    		System.out.println("CURRENT SCORE: " + GameGUI.getExpectedScore());
 //    		GameGUI.printBoard(GameGUI.getBoard());
-    		rohitsState.actualScore = GameGUI.getExpectedScore();
     		states1.add(rohitsState);
-    		
+			
+    		ArrayList<State> extraStates = this.getPossibleRandomMoves(moves[i], GameGUI.getBoard());
     		for (State extraState : extraStates)
-    		{	
-    			extraState.actualScore = GameGUI.getExpectedScore();
     			states1.add(extraState);
-    		}
-    		
-//    		states[i] = new State(GameGUI.getBoard(), moves[i]);
-    		
-//    		System.out.println("ORIGINAL");
-//    		GameGUI.printBoard(copyBoard);
 
     		GameGUI.board = GameGUI.copyBoard(copyBoard);
 //    		System.out.println("GAME");
@@ -124,9 +116,12 @@ public class State implements Comparable<State>{
     			if (board[r][c] == 0){
     				board[r][c] = 2;
     				posRandomMoves.add(new State(board, lastMove));
-//    				board = GameGUI.copyBoard(originalBoard);
-//    				board[r][c] = 4;
-//    				posRandomMoves.add(new State(board, lastMove));
+//    				int rand = (int) (Math.random() * 2);
+//    				if (rand == 0){
+//	    				board = GameGUI.copyBoard(originalBoard);
+//	    				board[r][c] = 4;
+//	    				posRandomMoves.add(new State(board, lastMove));
+//    				}
     				board = GameGUI.copyBoard(originalBoard);
     			}
     		}
@@ -136,6 +131,6 @@ public class State implements Comparable<State>{
 
 	@Override
 	public int compareTo(State o) {
-		return this.getValue() - o.getValue();
+		return (int) (this.getValue() - o.getValue());
 	}
 }
