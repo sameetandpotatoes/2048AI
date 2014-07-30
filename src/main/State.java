@@ -71,27 +71,21 @@ public class State implements Comparable<State>{
      *  initializes only this State's children; it does not recursively
      *  initialize all descendants. 
      */
-    public void initializeChildren(int[][] copyBoard) { 
+    public void initializeChildren(int[][] copyBoard, int curDepth) { 
     	Integer[] moves = getPossibleMoves();
 		GameGUI.board = GameGUI.copyBoard(copyBoard);
     	ArrayList<State> states1 = new ArrayList<State>();
+    	int limit = (GameGUI.getAIDepth() >= 6) ? 2 : 1;
     	for(int i = 0; i < moves.length; i++){
     		GameGUI.updateBoard(moves[i], false, true);
-//    		System.out.println("MOVED");
-//    		GameGUI.printBoard(GameGUI.getBoard());
     		State rohitsState = new State(GameGUI.getBoard(), moves[i]);
-//    		System.out.println("CURRENT SCORE: " + GameGUI.getExpectedScore());
-//    		GameGUI.printBoard(GameGUI.getBoard());
     		states1.add(rohitsState);
-			
-    		ArrayList<State> extraStates = this.getPossibleRandomMoves(moves[i], GameGUI.getBoard());
-    		for (State extraState : extraStates)
-    			states1.add(extraState);
-
+			if (curDepth > limit){
+	    		ArrayList<State> extraStates = this.getPossibleRandomMoves(moves[i], GameGUI.getBoard());
+	    		for (State extraState : extraStates)
+	    			states1.add(extraState);
+			}
     		GameGUI.board = GameGUI.copyBoard(copyBoard);
-//    		System.out.println("GAME");
-//    		GameGUI.printBoard(GameGUI.board);
-    		GameGUI.expectedScore = GameGUI.currentScore;
     	}
 
     	children = states1.toArray(new State[states1.size()]);
@@ -116,12 +110,6 @@ public class State implements Comparable<State>{
     			if (board[r][c] == 0){
     				board[r][c] = 2;
     				posRandomMoves.add(new State(board, lastMove));
-//    				int rand = (int) (Math.random() * 2);
-//    				if (rand == 0){
-//	    				board = GameGUI.copyBoard(originalBoard);
-//	    				board[r][c] = 4;
-//	    				posRandomMoves.add(new State(board, lastMove));
-//    				}
     				board = GameGUI.copyBoard(originalBoard);
     			}
     		}

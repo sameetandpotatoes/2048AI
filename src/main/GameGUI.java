@@ -9,6 +9,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.WindowEvent;
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -19,7 +20,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Scanner;
 
 import javax.swing.BorderFactory;
 import javax.swing.GroupLayout;
@@ -33,24 +36,27 @@ import javax.swing.WindowConstants;
 import javax.swing.border.LineBorder;
 
 public class GameGUI extends JFrame {
+	private static int GLOBAL_COUNTER = 0;
     private static final String filename = "scores.dat";
+    private static final String frequenciesFile = "frequencies.txt";
     public static int[][] board = new int[4][4];
-    public static int[][] prevBoard = new int[4][4];
+//    public static int[][] prevBoard = new int[4][4];
     public static int currentScore = 0;
     private static boolean enableOutput = false;
     private static String fontStyle = "Arial";
-    private int highScore = readScore();
+    private static int highScore = readScore();
     private static boolean ai_running = false;
     private static final int AI_EASY = 3;
     private static final int AI_HARD = 4;
+    private static final int AI_REALLY_HARD = 5;
     private static int aiDepth = AI_EASY;
-    public static int expectedScore = 0;
-    public static int GOAL = 2048;
+//    public static int expectedScore = 0;
+    public static int GOAL = 16384;
     public static Color NUMBER_COLOR = new Color(119, 110, 101);
     public static Color PANEL_BACKGROUND_COLOR = new Color(204, 192, 179);
     public static Color BORDER_COLOR = new Color(187, 173, 160);
     private static Map<String, Double> weights = new HashMap<String, Double>();
-    private static boolean playerTurn = true;
+    private static Map<String, Integer> frequencies = new HashMap<String, Integer>();
     public GameGUI() {
         initComponents();
         updateText();
@@ -61,6 +67,9 @@ public class GameGUI extends JFrame {
             	updateHigh();
             }
         });
+        this.setAlwaysOnTop(true);
+        this.setResizable(false);
+        this.setTitle("2048");
     }
     public static int getAIDepth(){
     	return aiDepth;
@@ -68,10 +77,7 @@ public class GameGUI extends JFrame {
     public static int getCurrentScore(){
     	return currentScore;
     }
-    public static int getExpectedScore(){
-    	return expectedScore;
-    }
-    private int readScore(){
+    private static int readScore(){
 		try {
 	        String content = new String(Files.readAllBytes(Paths.get(filename)));
 	        if (!content.equals("")){
@@ -96,6 +102,7 @@ public class GameGUI extends JFrame {
         tryAgainLabel = new JLabel();
         jPanel0_0 = new JPanel();
         jLbl0_0 = new JLabel();
+        titleLabel = new JLabel();
         jPanel0_1 = new JPanel();
         jLbl0_1 = new JLabel();
         jPanel0_2 = new JPanel();
@@ -126,6 +133,7 @@ public class GameGUI extends JFrame {
         jLbl3_2 = new JLabel();
         jPanel3_3 = new JPanel();
         jLbl3_3 = new JLabel();
+        tryAgain = new JButton();
         scorePanel = new JPanel();
         currentScoreLabel = new JLabel();
         scoreHeaderLabel = new JLabel();
@@ -134,111 +142,110 @@ public class GameGUI extends JFrame {
         bestHighScoreLbl = new JLabel();
         AIButton = new JButton();
 
-        mainGameFrame.setAlwaysOnTop(true);
-        mainGameFrame.setMinimumSize(new Dimension(405, 523));
-        mainGameFrame.setType(java.awt.Window.Type.POPUP);
-        mainGameFrame.setResizable(false);
+        titleLabel.setFont(new java.awt.Font("Arial", 1, 60)); // NOI18N
+        titleLabel.setForeground(new java.awt.Color(119, 110, 101));
+        titleLabel.setText("2048");
 
-        mainPanel.setBackground(new Color(255, 255, 51));
-
-        winLabel.setBackground(new Color(255, 255, 255));
-        winLabel.setFont(new Font(fontStyle, 1, 50));
-        winLabel.setForeground(new Color(255, 255, 255));
-        winLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        winLabel.setText("You win!");
-
-        menuPanel.setBackground(new Color(143, 122, 102));
-
-        tryAgainLabel.setFont(new Font(fontStyle, 0, 18));
-        tryAgainLabel.setForeground(new Color(255, 255, 255));
-        tryAgainLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        tryAgainLabel.setText("Try again");
-        tryAgainLabel.addMouseListener(new MouseListener(){
-
-			@Override
-			public void mouseClicked(MouseEvent arg0) {
-			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				updateHigh();
-				restart();
-		        java.awt.EventQueue.invokeLater(new Runnable() {
-		            public void run() {
-		                new GameGUI().setVisible(true);
-		            }
-		        });
-		        mainGameFrame.setVisible(false);
-		        ai_running = true;
-		        ai();
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-			}
-        	
-        });
-        GroupLayout menuPanelLayout = new GroupLayout(menuPanel);
-        menuPanel.setLayout(menuPanelLayout);
-        menuPanelLayout.setHorizontalGroup(
-            menuPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(menuPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(tryAgainLabel)
-                .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-        menuPanelLayout.setVerticalGroup(
-            menuPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(menuPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(tryAgainLabel)
-                .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        GroupLayout mainPanelLayout = new GroupLayout(mainPanel);
-        mainPanel.setLayout(mainPanelLayout);
-        mainPanelLayout.setHorizontalGroup(
-            mainPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addComponent(winLabel, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addGroup(GroupLayout.Alignment.TRAILING, mainPanelLayout.createSequentialGroup()
-                .addContainerGap(155, Short.MAX_VALUE)
-                .addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
-                    .addComponent(menuPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(154, 154, 154))
-        );
-        mainPanelLayout.setVerticalGroup(
-            mainPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(mainPanelLayout.createSequentialGroup()
-                .addGap(155, 155, 155)
-                .addComponent(winLabel, GroupLayout.PREFERRED_SIZE, 108, GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, 0)
-                .addComponent(menuPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addContainerGap(177, Short.MAX_VALUE))
-        );
-
-        GroupLayout mainGameFrameLayout = new GroupLayout(mainGameFrame.getContentPane());
-        mainGameFrame.getContentPane().setLayout(mainGameFrameLayout);
-        mainGameFrameLayout.setHorizontalGroup(
-            mainGameFrameLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addComponent(mainPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-        );
-        mainGameFrameLayout.setVerticalGroup(
-            mainGameFrameLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addComponent(mainPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-        );
-
+//        
+//        mainGameFrame.setAlwaysOnTop(true);
+//        mainGameFrame.setMinimumSize(new Dimension(405, 523));
+//        mainGameFrame.setType(java.awt.Window.Type.POPUP);
+//        mainGameFrame.setResizable(false);
+//
+//        mainPanel.setBackground(new Color(255, 255, 51));
+//
+//        winLabel.setBackground(new Color(255, 255, 255));
+//        winLabel.setFont(new Font(fontStyle, 1, 50));
+//        winLabel.setForeground(new Color(255, 255, 255));
+//        winLabel.setHorizontalAlignment(SwingConstants.CENTER);
+//        winLabel.setText("You win!");
+//
+//        menuPanel.setBackground(new Color(143, 122, 102));
+//
+//        tryAgainLabel.setFont(new Font(fontStyle, 0, 18));
+//        tryAgainLabel.setForeground(new Color(255, 255, 255));
+//        tryAgainLabel.setHorizontalAlignment(SwingConstants.CENTER);
+//        tryAgainLabel.setText("Try again");
+//        tryAgainLabel.addMouseListener(new MouseListener(){
+//
+//			@Override
+//			public void mouseClicked(MouseEvent arg0) {
+//			}
+//
+//			@Override
+//			public void mouseEntered(MouseEvent arg0) {
+//			}
+//
+//			@Override
+//			public void mouseExited(MouseEvent arg0) {
+//			}
+//
+//			@Override
+//			public void mousePressed(MouseEvent arg0) {
+//				updateHigh();
+//				restart();
+//				updateText();
+//				updateColors();
+//			}
+//
+//			@Override
+//			public void mouseReleased(MouseEvent arg0) {
+//			}
+//        	
+//        });
+//        GroupLayout menuPanelLayout = new GroupLayout(menuPanel);
+//        menuPanel.setLayout(menuPanelLayout);
+//        menuPanelLayout.setHorizontalGroup(
+//            menuPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+//            .addGroup(menuPanelLayout.createSequentialGroup()
+//                .addContainerGap()
+//                .addComponent(tryAgainLabel)
+//                .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+//        );
+//        menuPanelLayout.setVerticalGroup(
+//            menuPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+//            .addGroup(menuPanelLayout.createSequentialGroup()
+//                .addContainerGap()
+//                .addComponent(tryAgainLabel)
+//                .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+//        );
+//
+//        GroupLayout mainPanelLayout = new GroupLayout(mainPanel);
+//        mainPanel.setLayout(mainPanelLayout);
+//        mainPanelLayout.setHorizontalGroup(
+//            mainPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+//            .addComponent(winLabel, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+//            .addGroup(GroupLayout.Alignment.TRAILING, mainPanelLayout.createSequentialGroup()
+//                .addContainerGap(155, Short.MAX_VALUE)
+//                .addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
+//                    .addComponent(menuPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+//                .addGap(154, 154, 154))
+//        );
+//        mainPanelLayout.setVerticalGroup(
+//            mainPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+//            .addGroup(mainPanelLayout.createSequentialGroup()
+//                .addGap(155, 155, 155)
+//                .addComponent(winLabel, GroupLayout.PREFERRED_SIZE, 108, GroupLayout.PREFERRED_SIZE)
+//                .addGap(0, 0, 0)
+//                .addComponent(menuPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+//                .addGap(18, 18, 18)
+//                .addContainerGap(177, Short.MAX_VALUE))
+//        );
+//
+//        GroupLayout mainGameFrameLayout = new GroupLayout(mainGameFrame.getContentPane());
+//        mainGameFrame.getContentPane().setLayout(mainGameFrameLayout);
+//        mainGameFrameLayout.setHorizontalGroup(
+//            mainGameFrameLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+//            .addComponent(mainPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+//        );
+//        mainGameFrameLayout.setVerticalGroup(
+//            mainGameFrameLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+//            .addComponent(mainPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+//        );
+//
 
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        setTitle(GOAL + "");
+        setTitle("2048");
         setBackground(new Color(255, 255, 255));
         setCursor(new Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         setMaximumSize(null);
@@ -750,39 +757,34 @@ public class GameGUI extends JFrame {
                 .addComponent(highScoreLabel, GroupLayout.DEFAULT_SIZE, 34, Short.MAX_VALUE)
                 .addGap(0, 0, 0))
         );
-        JButton LogOutput = new JButton();
-        LogOutput.setText("Log");
-        LogOutput.setFocusable(false);
-        LogOutput.addActionListener(new ActionListener(){
-        	public void actionPerformed(ActionEvent arg0){
-        		enableOutput = !enableOutput;
-        	}
+        tryAgain.setText("Restart");
+        tryAgain.setFocusable(false);
+        tryAgain.setRequestFocusEnabled(false);
+        tryAgain.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent arg0) {
+				updateHigh();
+				restart();
+				updateText();
+				updateColors();
+				AIButton.setText("Start AI");
+			}
         });
-        JButton undo = new JButton("Undo");
-        undo.setFocusable(false);
-        undo.addActionListener(new ActionListener(){
-        	public void actionPerformed(ActionEvent arg0){
-        		board = copyBoard(prevBoard);
-        		updateText();
-        		updateColors();
-        	}
-        });
-        AIButton.setText("AI");
+        AIButton.setText("Start AI");
         AIButton.setFocusable(false);
         AIButton.setRequestFocusEnabled(false);
         AIButton.addActionListener(new ActionListener(){
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				// TODO Auto-generated method stub
 				if (!ai_running){
+					AIButton.setText("Stop AI");
 					ai_running = true;
 					ai();
 				} else{
+					AIButton.setText("Start AI");
 					ai_running = false;
 				}
 			}
-        	
         });
         GroupLayout layout = new GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -832,29 +834,23 @@ public class GameGUI extends JFrame {
                     .addGroup(layout.createSequentialGroup()
                         .addGap(0, 0, 0)
                         .addGap(18, 18, 18)
-                        .addComponent(AIButton))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(0, 0, 0)
+                        .addComponent(AIButton)
                         .addGap(18, 18, 18)
-                        .addComponent(LogOutput))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(0, 0, 0)
-                        .addGap(18, 18, 18)
-                        .addComponent(undo)))
+                        .addComponent(tryAgain))
+                    .addComponent(titleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 146, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(0, 0, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                    .addComponent(bestPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                    .addComponent(titleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 79, javax.swing.GroupLayout.PREFERRED_SIZE)
+                	.addComponent(bestPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                     .addComponent(scorePanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                    .addComponent(AIButton))
-                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                    .addComponent(LogOutput))
-                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                    .addComponent(undo))
+                    .addComponent(AIButton)
+                    .addGap(18, 18, 18)
+                    .addComponent(tryAgain))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                     .addComponent(jPanel0_2, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
@@ -896,14 +892,106 @@ public class GameGUI extends JFrame {
              mainGameFrame.setVisible(true);
          }
          if (checkLoss(ai)) {
-             winLabel.setText("Game over!");
-             winLabel.setForeground(NUMBER_COLOR);
-             mainPanel.setBackground(new Color(238, 228, 218));
-             mainGameFrame.setVisible(true);
+//        	 winLabel.setText("Game over!");
+//             winLabel.setForeground(NUMBER_COLOR);
+//             mainPanel.setBackground(new Color(238, 228, 218));
+//             mainGameFrame.setVisible(true);
          }
          updateColors(); //If tiles changed numbers, we need to update the colors
          if (ai_running)
         	 ai();
+    }
+    private static void getInfoFromContent(String content){
+        Scanner scanner = new Scanner(content);
+        while (scanner.hasNextLine()){
+        	String line = scanner.nextLine();
+        	String[] keyValuePair = line.split(": ");
+        	frequencies.put(keyValuePair[0], Integer.parseInt(keyValuePair[1]));
+        }
+        scanner.close();
+    }
+    private static void getInfoFromBoard(){
+    	for (int r = 0; r < board.length; r++){
+    		for (int c = 0; c < board[r].length; c++){
+    			if (board[r][c] != 0){
+    				switch(board[r][c]){
+    					case 512:
+    						frequencies.put("512", 	
+    												frequencies.get("512")+1);
+    						break;
+    					case 1024:
+    						frequencies.put("1024", 
+    												frequencies.get("1024")+1);
+    						frequencies.put("512", 	
+    												frequencies.get("512")+2);
+    						break;
+    					case 2048:
+    						frequencies.put("2048", 
+									frequencies.get("2048")+1);
+    						frequencies.put("1024", 
+									frequencies.get("1024")+2);
+    						frequencies.put("512", 	
+									frequencies.get("512")+4);
+    						break;
+    					case 4096:
+    						frequencies.put("4096", 
+									frequencies.get("4096")+1);
+    						frequencies.put("2048", 
+									frequencies.get("2048")+2);
+    						frequencies.put("1024", 
+									frequencies.get("1024")+4);
+    						frequencies.put("512", 
+									frequencies.get("512")+8);
+    						break;
+    					default:
+    						break;
+    				}
+    			}
+    		}
+    	}
+    }
+    public static void updateFrequencies(){
+    	try {
+	        String content = new String(Files.readAllBytes(Paths.get(frequenciesFile)));
+	        getInfoFromContent(content);
+	        getInfoFromBoard();
+	        frequencies.put("Total", frequencies.get("Total")+1);
+	        double p512 = Math.min(100.0, ((double) (frequencies.get("512"))/frequencies.get("Total")) * 100.0);
+        	double p1024 = Math.min(100.0, ((double) (frequencies.get("1024"))/frequencies.get("Total")) * 100.0);
+        	double p2048 = Math.min(100.0, ((double) (frequencies.get("2048"))/frequencies.get("Total")) * 100.0);
+        	double p4096 = Math.min(100.0, ((double) (frequencies.get("4096"))/frequencies.get("Total")) * 100.0);
+        	if (p512 == 100.0)
+        		frequencies.put("512", frequencies.get("Total"));
+        	if (p1024 == 100.0)
+        		frequencies.put("1024", frequencies.get("Total"));
+        	if (p2048 == 100.0)
+        		frequencies.put("2048", frequencies.get("Total"));
+        	if (p4096 == 100.0)
+        		frequencies.put("4096", frequencies.get("Total"));
+	        FileWriter fStream = new FileWriter(frequenciesFile, true);
+	        BufferedWriter fbw = new BufferedWriter(fStream);
+	        Files.write(Paths.get("./"+frequenciesFile), ("").getBytes());
+	        fbw.append(("512: " + frequencies.get("512")));
+	        fbw.newLine();
+	        fbw.append(("1024: " + frequencies.get("1024")));
+	        fbw.newLine();
+	        fbw.append(("2048: " + frequencies.get("2048")));
+	        fbw.newLine();
+	        fbw.append(("4096: " + frequencies.get("4096")));
+	        fbw.newLine();
+	        fbw.append(("Total: " + frequencies.get("Total")));
+	        fbw.newLine();
+	        fbw.close();
+        	System.out.println("512: " + frequencies.get("512") + " times / " + p512 + "%");
+        	System.out.println("1024: "+ frequencies.get("1024") + " times / " + p1024 + "%");
+        	System.out.println("2048: "+ frequencies.get("2048") + " times / " + p2048 + "%");
+        	System.out.println("4096: "+ frequencies.get("4096") + " times / " + p4096 + "%");
+        	System.out.println("Total: "+ frequencies.get("Total"));
+		} catch (FileNotFoundException e) {
+			throw new IllegalArgumentException("frequencies.dat file not found");
+		} catch(IOException ie){
+			throw new IllegalArgumentException("frequencies.dat file not found");
+		}
     }
     public static void printBoard(int[][] board) {
         for (int[] a: board) {
@@ -946,7 +1034,6 @@ public class GameGUI extends JFrame {
         }
     }
     public static void addNewTile(int[][] before){
-    	
     	if (!Arrays.deepEquals(before, board)) {
             ArrayList<int[]> a = new ArrayList<int[]>();
             //Gather all Empty Tiles left on the board
@@ -984,7 +1071,6 @@ public class GameGUI extends JFrame {
                     if (real) {
                         currentScore += board[i][j-1];
                     }
-                    expectedScore += board[i][j-1];
                     board[i][j] = 0; //temporarily leave a 0 which will go away when we push again
                 }
             }
@@ -1027,7 +1113,8 @@ public class GameGUI extends JFrame {
     }
     public static void restart() {
             currentScore = 0;
-            expectedScore = 0;
+            aiDepth = AI_EASY;
+            ai_running = false;
             board = new int[4][4];
             int[] pos1 = {(int) (Math.random() * 3), (int) (Math.random() * 3)};
             int value1 = ((int) (Math.random() * 2) + 1) * 2;
@@ -1039,10 +1126,19 @@ public class GameGUI extends JFrame {
             int value2 = ((int) (Math.random() * 2) + 1) * 2;
             board[pos1[0]][pos1[1]] = value1;
             board[pos2[0]][pos2[1]] = value2;
-            weights.put("Smooth", 0.1);
+            weights.put("Smooth",0.1);
             weights.put("Mono",1.0);
             weights.put("Empty",2.7);
             weights.put("Max",1.0);
+            resetFrequencies();
+    }
+    private static void resetFrequencies(){
+    	frequencies.clear();
+    	frequencies.put("512", 0);
+        frequencies.put("1024", 0);
+        frequencies.put("2048", 0);
+        frequencies.put("4096", 0);
+        frequencies.put("Total", 0);
     }
     public static int[][] copyBoard(int[][] board) {
         int[][] copy = new int[board.length][board[0].length];
@@ -1053,7 +1149,7 @@ public class GameGUI extends JFrame {
         }
         return copy;
     }
-    private void updateText() {
+    private static void updateText() {
         jLbl0_0.setText(board[0][0] == 0 ? "": "" + board[0][0]);
         jLbl0_1.setText(board[0][1] == 0 ? "": "" + board[0][1]);
         jLbl0_2.setText(board[0][2] == 0 ? "": "" + board[0][2]);
@@ -1073,7 +1169,7 @@ public class GameGUI extends JFrame {
         currentScoreLabel.setText("" + currentScore);
         highScoreLabel.setText("" + highScore);
     }
-    private void updateColors() {
+    private static void updateColors() {
         JPanel[] numberPanelContainers = {jPanel0_0, jPanel0_1, jPanel0_2, jPanel0_3, jPanel1_0, jPanel1_1, jPanel1_2, jPanel1_3, jPanel2_0, jPanel2_1, jPanel2_2, jPanel2_3, jPanel3_0, jPanel3_1, jPanel3_2, jPanel3_3};
         JLabel[] numbers = {jLbl0_0, jLbl0_1, jLbl0_2, jLbl0_3, jLbl1_0, jLbl1_1, jLbl1_2, jLbl1_3, jLbl2_0, jLbl2_1, jLbl2_2, jLbl2_3, jLbl3_0, jLbl3_1, jLbl3_2, jLbl3_3};
         for (int i = 0; i < numberPanelContainers.length; i++) {
@@ -1115,6 +1211,7 @@ public class GameGUI extends JFrame {
             }
             else if (numbers[i].getText().equals("512")){
             	numberPanelContainers[i].setBackground(new Color(237, 200, 80));
+            	numbers[i].setForeground(new Color(255, 255, 255));
             }
             else if (numbers[i].getText().equals("1024")){
             	numberPanelContainers[i].setBackground(new Color(237, 197, 63));
@@ -1190,66 +1287,89 @@ public class GameGUI extends JFrame {
 			int[][] copyBoard = copyBoard(board);
 			State currentState = new State(board, 0);
     		createGameTree(currentState, aiDepth, copyBoard);
-    		board = copyBoard;
+    		board = copyBoard(copyBoard);
     		
     		minimax(currentState);
     		int keyStroke = currentState.getChildren()[currentState.getChildren().length - 1].getLastMove();
-    		int[] maxTile = highestTile(currentState.getBoard());
     		boolean movedAlready = false;
+    		updateBoard(keyStroke, true, true);
+    		updateText();
+    		updateColors();
+//    		System.out.println("Moved to next position");
+//    		printBoard(board);
+    		int[] maxTile = highestTile(board);
     		if (!isCorner(maxTile[0], maxTile[1])){
-//    			System.out.println("Max tile is not in the corner");
+//    			System.out.println("Not in the corner");
 	    		int i = currentState.getChildren().length - 2;
-    			for (i = currentState.getChildren().length - 2; i >= (int) (currentState.getChildren().length/2); i--){
+    			while (i >= 0 && Math.abs(currentState.getValue() - currentState.getChildren()[i].getValue()) <= 1){
 	    			State nextState = currentState.getChildren()[i];
 	    			int[] nextHighest = highestTile(nextState.getBoard());
-	    			if (isCorner(nextHighest[0], nextHighest[1]) && Math.abs(nextState.getValue() - currentState.getValue()) < 5){
+//	    			System.out.println("Printing next board");
+//	    			printBoard(nextState.getBoard());
+	    			if (isCorner(nextHighest[0], nextHighest[1])){
+//	    				System.out.println("Found new tile in corner");
+	        			board = copyBoard(copyBoard);
 	    				handleMoves(nextState.getLastMove(), false);
+	    				if (enableOutput){
+	            			System.out.println(nextState.getValue());
+	            			System.out.println("Moved " + nextState.getLastMove());
+	    				}
 	    				movedAlready = true;
 	    				break;
 	    			}
+	    			i--;
 	    		}
-//    			System.out.println("Out of the loop");
     		}
     		if (!movedAlready){
-    			handleMoves(keyStroke, false);	
-    		}
-    		if (enableOutput){
-    			System.out.println(currentState.getChildren()[currentState.getChildren().length - 1].getValue());
-    			System.out.println("Moved " + keyStroke);
-    		}
-//    		minimax(currentState, aiDepth, (-1 * Integer.MAX_VALUE), Integer.MAX_VALUE);
-//    		int keyStroke = currentState.getChildren()[currentState.getChildren().length - 1].getLastMove();
-    		
-    		int countEmpty = 0;
-    		for (int r = 0; r < board.length; r++){
-        		for (int c = 0; c < board[r].length; c++){
-        			if (board[r][c] == 0){
-        				countEmpty++;
-        			}
+//    			System.out.println("Using original move");
+    			addNewTile(copyBoard);
+    			updateText();
+    			updateColors();
+    			if (enableOutput){
+        			System.out.println(currentState.getChildren()[currentState.getChildren().length - 1].getValue());
+        			System.out.println("Moved " + keyStroke);
         		}
-        	}
-    		if (countEmpty <= 3)
+    			if (ai_running){
+    				ai();
+    			}
+    		}
+    		int countEmpty = countEmpty(board);
+    		
+    		if (countEmpty <= 2)
+    			aiDepth = AI_REALLY_HARD;
+    		else if (countEmpty <= 6)
     			aiDepth = AI_HARD;
     		else
     			aiDepth = AI_EASY;
-    		expectedScore = currentScore;
-    		prevBoard = copyBoard(copyBoard);
+    		if (checkLoss(false)){
+//    			updateFrequencies();
+    		}
     		return 0;
     	  }
       }.execute();
+    }
+    private static int countEmpty(int[][] board){
+    	int countEmpty = 0;
+		for (int r = 0; r < board.length; r++){
+    		for (int c = 0; c < board[r].length; c++){
+    			if (board[r][c] == 0){
+    				countEmpty++;
+    			}
+    		}
+    	}
+		return countEmpty;
     }
     public static void createGameTree(State s, int d, int[][] originalBoard) {
     	if(d == 0){
     		return;
     	}
     	if(s.getChildren().length == 0){
-    		s.initializeChildren(originalBoard);
+    		s.initializeChildren(originalBoard, d);
     	}
     	for(State st : s.getChildren()){
     		createGameTree(st, d-1, st.getBoard());
     	}
     }
-
     public void minimax(State s) {
     	if(s.getValue() != 0){
     		return;
@@ -1262,126 +1382,23 @@ public class GameGUI extends JFrame {
     		minimax(st);
     	}
     	Arrays.sort(s.getChildren());
-//    	if (enableOutput){
-//    		System.out.println("Printing CHILDREN");
-//    		for (State state : s.getChildren()){
-//    			System.out.println(state.getValue());
-//    			printBoard(state.getBoard());
-//    			int[] maxLocations = highestTile(state.getBoard());
-//    			System.out.println((Math.log(maxLocations[2]) / Math.log(2)));
-//    		}
-//    	}
     	s.setValue(s.getChildren()[s.getChildren().length - 1].getValue());
     }
-    
-    
-//    public int[] minimax(State s, int depth, int a, int b) {
-//    	if(depth == 0){
-//    		Arrays.sort(s.getChildren());
-//    		s.setValue(evaluateBoard(s.getBoard(),s.getScore()));
-//    		return new int[]{s.getValue(), s.getLastMove()};
-////    		return s.getValue();
-//    	}
-//    	if (playerTurn){
-//    		State st = null;
-//    		Arrays.sort(s.getChildren());
-//    		for(int i = 0; i < s.getChildren().length; i++){
-//    			st = s.getChildren()[i];
-////    			a = Math.max(a, minimax(st, depth - 1, a, b, false));
-//    			a = Math.max(a, minimax(st, depth - 1, a, b)[0]);
-//    			st.setValue(evaluateBoard(s.getBoard(),s.getScore()));
-//	    		if (b <= a){
-//	    			break;
-//	    		}	
-//    		}
-////    		return a;
-//    		return new int[]{a,st.getLastMove()};
-//    	} else{
-//    		State st = null;
-//    		Arrays.sort(s.getChildren());
-//    		for(int i = 0; i < s.getChildren().length; i++){
-//    			st = s.getChildren()[i];
-//    			b = Math.min(b, minimax(st, depth - 1, a, b)[0]);
-//    			st.setValue(evaluateBoard(s.getBoard(),s.getScore()));
-//	    		if (b <= a){
-//	    			break;
-//	    		}
-//    		}
-////    		return b;
-//    		return new int[]{b,st.getLastMove()};
-//    	}
-//    }
-    private static int[] highestTileCol(int[] row){
-    	int max = 0, maxCol = -1;
-    	for (int col = 0; col < row.length; col++){
-    		if (row[col] > max){
-    			max = row[col];
-    			maxCol = col;
-    		}
-    	}
-    	return new int[]{maxCol, max};
-    }
-    private static int[] highestTileRow(int col, int[][] board){
-    	int max = 0, maxRow = -1;
-    	for (int row = 0; row < board.length; row++){
-    		if (board[row][col] > max){
-    			max = board[row][col];
-    			maxRow = row;
-    		}
-    	}
-    	return new int[]{maxRow, max};
-    }
     public static int evaluateBoard(int[][] board, int stateScore){
-    	int countFilled = 0;
-    	for (int r = 0; r < board.length; r++){
-    		for (int c = 0; c < board[r].length; c++){
-    			if (board[r][c] == 0){
-    				
-    			} else {
-    				countFilled++;
-    			}
-    		}
-    	}
+    	int countEmpty = countEmpty(board);
     	int[] maxLocations = highestTile(board);
     	double smoothness =(smoothness(board) * weights.get("Smooth"));
-    	double mono =monotonocity(board) * weights.get("Mono"); 
-    	double empty =Math.log(16 - countFilled) * weights.get("Empty");
+    	double mono = monotonocity(board) * weights.get("Mono"); 
+    	double empty = Math.log(countEmpty) * weights.get("Empty");
     	double max = maxLocations[2] * weights.get("Max");
     	double score = smoothness + mono + empty + max;
     	double factor = (Math.log(maxLocations[2]) / Math.log(2));
-    	if (maxLocations[0] == 0 && (maxLocations[1] == 0 || maxLocations[1] == 3)
-    	    	|| (maxLocations[0] == 3 && (maxLocations[1] == 0 || maxLocations[1] == 3))){
-    	    score *= factor;
-    	}
-    	if (enableOutput){
-    		try {
-    			FileWriter fstream = new FileWriter("log.txt",true);
-                BufferedWriter fbw = new BufferedWriter(fstream);
-                fbw.append("Smooth: " + smoothness);
-                fbw.append("Mono: " + mono);
-                fbw.append("Empty: " + empty);
-                fbw.append("Total: " + score);
-                for (int r = 0; r < board.length; r++){
-                	for (int c = 0; c < board[r].length; c++){
-                		fbw.append(Integer.toString(board[r][c]));
-                	}
-                	fbw.newLine();
-                }
-                fbw.newLine();
-                fbw.close();
-    		} catch (IOException e) {
-    			e.printStackTrace();
-    		}
-//    		System.out.print("Smooth: " + smoothness+" ");
-//    		System.out.print("Mono: " + mono+ " ");
-//    		System.out.print("Empty: " + empty+" ");
-//    		System.out.println("Total: " + score);
-//    		printBoard(board);
-    	}
-//    	if (enableOutput){
-//    		System.out.println("Score: " + score);
-//    		printBoard(board);
+//    	if (maxLocations[0] == 0 && (maxLocations[1] == 0 || maxLocations[1] == 3)
+//    	    	|| (maxLocations[0] == 3 && (maxLocations[1] == 0 || maxLocations[1] == 3))){
+//    	    score *= factor;
 //    	}
+    	if (enableOutput)
+    		System.out.println((int) Math.round(score));
     	return (int) Math.round(score);
     }
     private static double smoothness(int[][] board){
@@ -1394,14 +1411,14 @@ public class GameGUI extends JFrame {
 						//check right
 						if (board[r][c+1] != 0 && board[r][c] != 0){
 							double targetValue = Math.log(board[r][c+1]) / Math.log(2);
-							smoothness += Math.abs(value - targetValue);
+							smoothness -= Math.abs(value - targetValue);
 						}
 	    			}
 					if (r != 3){
 						//check down
 						if (board[r+1][c] != 0 && board[r][c] != 0){
 							double targetValue = Math.log(board[r+1][c] / Math.log(2));
-							smoothness += Math.abs(value - targetValue);
+							smoothness -= Math.abs(value - targetValue);
 						}
 					}
     			}
@@ -1409,117 +1426,23 @@ public class GameGUI extends JFrame {
     	}
     	return smoothness;
     }
-//    public static int evaluateBoard(int[][] board, int stateScore){
-//    	int score = 0;
-//    	int sumOfTiles = 0, countFilled = 0, sumDifference = 1;
-//    	for (int r = 0; r < board.length; r++){
-//    		for (int c = 0; c < board[r].length; c++){
-//    			if (board[r][c] == 0){
-//    				score += 20000;
-//    			} else {
-//    				sumOfTiles += board[r][c];
-//    				countFilled++;
-//    			}
-//    			if (c == 0){
-//					int highestTileCol = highestTileCol(board[r])[0];
-//					if (highestTileCol == 0 || highestTileCol == 3){
-//						score += 20000;
-//					}
-//    			}
-//    			if (r == 0){
-//    				int highestTileRow = highestTileRow(c, board)[0];
-//    				if (highestTileRow == 0 || highestTileRow == 3){
-//    					score += 20000;
-//    				}
-//    			}
-////    			if (c != 3){
-////    				//check right
-////    				if (board[r][c+1] != 0 && board[r][c] != 0){
-////    					sumDifference += Math.abs(board[r][c+1] - board[r][c]) / (Math.min(board[r][c+1], board[r][c]));
-////    				}
-////    			}
-////    			if (r != 3){
-////    				//check down
-////    				if (board[r+1][c] != 0 && board[r][c] != 0){
-////    					sumDifference += Math.abs(board[r+1][c] - board[r][c]) / Math.min(board[r+1][c], board[r][c]);
-////    				}
-////    			}
-//    		}
-//    	}
-////    	System.out.println(sumDifference);
-////    	int smoothnessHeuristic = measureSmoothness(board);
-////    	if (smoothnessHeuristic >= 8)
-////    		score /= 10;
-////    	System.out.println(sumDifference);
-////    	System.out.println(Math.max(1.0, (Math.ceil((sumDifference/countFilled)))));
-//    	
-////    	score /= Math.max(1.0, (Math.ceil((sumDifference/countFilled))));
-//    	
-//    	int[] maxLocations = highestTile(board);
-//    	if (maxLocations[0] == 0 && (maxLocations[1] == 0 || maxLocations[1] == 3)
-//    	|| (maxLocations[0] == 3 && (maxLocations[1] == 0 || maxLocations[1] == 3))){ //Check corner
-//    		score *= 4;
-//    	} else{
-//    		score /= 20;
-////    		if (maxLocations[2]>=512)
-////    			score /= 2;
-//    	}
-//    	
-////    	if (countFilled >= 13){
-//////    		score /= 5;
-////    		score /= 20;
-////    	}
-//    	
-//    	
-////    	if (consecutiveTiles(board)){
-////    		score *= 2;
-////    	}
-//    	
-////    	System.out.println("State: " + stateScore + "\nCurrent: " + currentScore);
-//    	
-////    	score += (stateScore - currentScore) * 1000;
-//    	
-////    	score += (int) ((stateScore + Math.log(stateScore)) * (16 - countFilled));
-//    	if (enableOutput){
-//	    	System.out.println(score);
-//	    	printBoard(board);
-//    	}
-//    	return score;
-//    }
-    private static boolean consecutiveTiles(int[][] board){
-    	for (int r = 0; r < board.length; r++){
-    		for (int c = 0; c < board[r].length; c++){
-    			int restR = r + 1;
-    			while (restR < board.length && board[restR][c] == 0)
-    				restR++;
-    			if (restR != board.length && board[restR][c] == board[r][c])
-    				return true;
-    			
-    			int restC = c + 1;
-    			while (restC < board[r].length && board[r][restC] == 0)
-    				restC++;
-    			if (restC != board.length && board[r][restC] == board[r][c])
-    				return true;
-    		}
-    	}
-    	return false;
-    }
-    private static double monotonocity(int[][] board){
-    	double[] totals = new double[]{0, 0, 0, 0};
+    private static int monotonocity(int[][] board){
+    	int[] totals = new int[]{0, 0, 0, 0};
+    	//Left Right
     	for (int c = 0; c < 4; c++){
-    		int current=0;
-			int nextRow = current+1;
+    		int current = 0;
+			int nextRow = current + 1;
 			while (nextRow < 4){
 				while (nextRow < 4 && board[nextRow][c] == 0)
 					nextRow++;
 				if (nextRow == 4)
-					break;
-				double currentValue = 0.0, nextValue = 0.0;
+					nextRow--;
+				int currentValue = 0, nextValue = 0;
 				if (board[current][c] != 0){
-					currentValue = (Math.log(board[current][c]) / Math.log(2));
+					currentValue = (int) (Math.log(board[current][c]) / Math.log(2));
 				}
 				if (board[nextRow][c] != 0){
-					nextValue = (Math.log(board[nextRow][c]) / Math.log(2));
+					nextValue = (int) (Math.log(board[nextRow][c]) / Math.log(2));
 				}
 	  	      	if (currentValue > nextValue) {
 	  	      		totals[0] += nextValue - currentValue;
@@ -1530,6 +1453,7 @@ public class GameGUI extends JFrame {
 				nextRow++;
 			}
     	}
+    	//Up Down
     	for (int r = 0; r < 4; r++){
     		int current=0;
 			int nextCol = current+1;
@@ -1537,13 +1461,13 @@ public class GameGUI extends JFrame {
 				while (nextCol < 4 && board[r][nextCol] == 0)
 					nextCol++;
 				if (nextCol == 4)
-					break;
-				double currentValue = 0.0, nextValue = 0.0;
+					nextCol--;
+				int currentValue = 0, nextValue = 0;
 				if (board[r][current] != 0){
-					currentValue = (Math.log(board[r][current]) / Math.log(2));
+					currentValue = (int) (Math.log(board[r][current]) / Math.log(2));
 				}
 				if (board[r][nextCol] != 0){
-					nextValue = (Math.log(board[r][nextCol]) / Math.log(2));
+					nextValue = (int) (Math.log(board[r][nextCol]) / Math.log(2));
 				}
 	  	      	if (currentValue > nextValue) {
 	  	      		totals[2] += nextValue - currentValue;
@@ -1563,50 +1487,61 @@ public class GameGUI extends JFrame {
                 new GameGUI().setVisible(true);
             }
         });
+    	
+//        java.awt.EventQueue.invokeLater(new Runnable() {
+//        	public void run(){
+//        		GUI gui = new GUI();
+//            	AI ai = new AI(gui);
+//            	gui.setAI(ai);
+//            	gui.setVisible(true);
+//        	}
+//        });
     }
 
-    private JButton AIButton;
+    private static JButton AIButton;
     private JFrame mainGameFrame;
-    private JLabel jLbl0_0;
-    private JLabel jLbl2_1;
-    private JLabel jLbl2_2;
-    private JLabel jLbl2_3;
-    private JLabel jLbl3_0;
-    private JLabel jLbl3_1;
-    private JLabel jLbl3_2;
-    private JLabel jLbl3_3;
-    private JLabel currentScoreLabel;
-    private JLabel highScoreLabel;
-    private JLabel scoreHeaderLabel;
-    private JLabel jLbl0_1;
-    private JLabel bestHighScoreLbl;
-    private JLabel winLabel;
-    private JLabel tryAgainLabel;
-    private JLabel jLbl0_2;
-    private JLabel jLbl0_3;
-    private JLabel jLbl1_0;
-    private JLabel jLbl1_1;
-    private JLabel jLbl1_2;
-    private JLabel jLbl1_3;
-    private JLabel jLbl2_0;
-    private JPanel mainPanel;
-    private JPanel jPanel0_3;
-    private JPanel jPanel1_0;
-    private JPanel jPanel1_1;
-    private JPanel jPanel1_2;
-    private JPanel menuPanel;
-    private JPanel jPanel1_3;
-    private JPanel scorePanel;
-    private JPanel jPanel2_0;
-    private JPanel jPanel2_1;
-    private JPanel jPanel2_2;
-    private JPanel jPanel2_3;
-    private JPanel jPanel3_0;
-    private JPanel jPanel3_1;
-    private JPanel jPanel3_2;
-    private JPanel jPanel3_3;
+    private static JLabel jLbl0_0;
+    private static JLabel jLbl2_1;
+    private static JLabel jLbl2_2;
+    private static JLabel jLbl2_3;
+    private static JLabel jLbl3_0;
+    private static JLabel jLbl3_1;
+    private static JLabel jLbl3_2;
+    private static JLabel jLbl3_3;
+    private static JLabel currentScoreLabel;
+    private static JLabel highScoreLabel;
+    private static JLabel scoreHeaderLabel;
+    private static JLabel jLbl0_1;
+    private static JLabel bestHighScoreLbl;
+    private static JLabel winLabel;
+    private static JLabel tryAgainLabel;
+    private static JLabel jLbl0_2;
+    private static JLabel jLbl0_3;
+    private static JLabel jLbl1_0;
+    private static JLabel jLbl1_1;
+    private static JLabel jLbl1_2;
+    private static JLabel jLbl1_3;
+    private static JLabel jLbl2_0;
+    private static JPanel mainPanel;
+    private static JPanel jPanel0_3;
+    private static JPanel jPanel1_0;
+    private static JPanel jPanel1_1;
+    private static JPanel jPanel1_2;
+    private static JPanel menuPanel;
+    private static JPanel jPanel1_3;
+    private static JPanel scorePanel;
+    private static JPanel jPanel2_0;
+    private static JPanel jPanel2_1;
+    private static JPanel jPanel2_2;
+    private static JPanel jPanel2_3;
+    private static JPanel jPanel3_0;
+    private static JPanel jPanel3_1;
+    private static JPanel jPanel3_2;
+    private static JPanel jPanel3_3;
     private JPanel bestPanel;
-    private JPanel jPanel0_0;
-    private JPanel jPanel0_1;
-    private JPanel jPanel0_2;
+    private static JPanel jPanel0_0;
+    private static JPanel jPanel0_1;
+    private static JPanel jPanel0_2;
+    private static JLabel titleLabel;
+    private static JButton tryAgain;
 }
