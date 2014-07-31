@@ -1298,28 +1298,28 @@ public class GameGUI extends JFrame {
 //    		System.out.println("Moved to next position");
 //    		printBoard(board);
     		int[] maxTile = highestTile(board);
-    		if (!isCorner(maxTile[0], maxTile[1])){
-//    			System.out.println("Not in the corner");
-	    		int i = currentState.getChildren().length - 2;
-    			while (i >= 0 && Math.abs(currentState.getValue() - currentState.getChildren()[i].getValue()) <= 1){
-	    			State nextState = currentState.getChildren()[i];
-	    			int[] nextHighest = highestTile(nextState.getBoard());
-//	    			System.out.println("Printing next board");
-//	    			printBoard(nextState.getBoard());
-	    			if (isCorner(nextHighest[0], nextHighest[1])){
-//	    				System.out.println("Found new tile in corner");
-	        			board = copyBoard(copyBoard);
-	    				handleMoves(nextState.getLastMove(), false);
-	    				if (enableOutput){
-	            			System.out.println(nextState.getValue());
-	            			System.out.println("Moved " + nextState.getLastMove());
-	    				}
-	    				movedAlready = true;
-	    				break;
-	    			}
-	    			i--;
-	    		}
-    		}
+//    		if (!isCorner(maxTile[0], maxTile[1])){
+////    			System.out.println("Not in the corner");
+//	    		int i = currentState.getChildren().length - 2;
+//    			while (i >= 0 && Math.abs(currentState.getValue() - currentState.getChildren()[i].getValue()) <= 1){
+//	    			State nextState = currentState.getChildren()[i];
+//	    			int[] nextHighest = highestTile(nextState.getBoard());
+////	    			System.out.println("Printing next board");
+////	    			printBoard(nextState.getBoard());
+//	    			if (isCorner(nextHighest[0], nextHighest[1])){
+////	    				System.out.println("Found new tile in corner");
+//	        			board = copyBoard(copyBoard);
+//	    				handleMoves(nextState.getLastMove(), false);
+//	    				if (enableOutput){
+//	            			System.out.println(nextState.getValue());
+//	            			System.out.println("Moved " + nextState.getLastMove());
+//	    				}
+//	    				movedAlready = true;
+//	    				break;
+//	    			}
+//	    			i--;
+//	    		}
+//    		}
     		if (!movedAlready){
 //    			System.out.println("Using original move");
     			addNewTile(copyBoard);
