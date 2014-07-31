@@ -1,7 +1,6 @@
 package main;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 /** An instance represents the state of a game of Connect Four. */
 public class State implements Comparable<State>{

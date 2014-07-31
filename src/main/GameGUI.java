@@ -7,9 +7,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.WindowEvent;
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -20,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -36,8 +32,11 @@ import javax.swing.WindowConstants;
 import javax.swing.border.LineBorder;
 
 public class GameGUI extends JFrame {
-	private static int GLOBAL_COUNTER = 0;
-    private static final String filename = "scores.dat";
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private static final String filename = "scores.dat";
     private static final String frequenciesFile = "frequencies.txt";
     public static int[][] board = new int[4][4];
 //    public static int[][] prevBoard = new int[4][4];
@@ -96,10 +95,6 @@ public class GameGUI extends JFrame {
     }
     private void initComponents() {
         mainGameFrame = new JFrame();
-        mainPanel = new JPanel();
-        winLabel = new JLabel();
-        menuPanel = new JPanel();
-        tryAgainLabel = new JLabel();
         jPanel0_0 = new JPanel();
         jLbl0_0 = new JLabel();
         titleLabel = new JLabel();
@@ -1295,33 +1290,7 @@ public class GameGUI extends JFrame {
     		updateBoard(keyStroke, true, true);
     		updateText();
     		updateColors();
-//    		System.out.println("Moved to next position");
-//    		printBoard(board);
-    		int[] maxTile = highestTile(board);
-//    		if (!isCorner(maxTile[0], maxTile[1])){
-////    			System.out.println("Not in the corner");
-//	    		int i = currentState.getChildren().length - 2;
-//    			while (i >= 0 && Math.abs(currentState.getValue() - currentState.getChildren()[i].getValue()) <= 1){
-//	    			State nextState = currentState.getChildren()[i];
-//	    			int[] nextHighest = highestTile(nextState.getBoard());
-////	    			System.out.println("Printing next board");
-////	    			printBoard(nextState.getBoard());
-//	    			if (isCorner(nextHighest[0], nextHighest[1])){
-////	    				System.out.println("Found new tile in corner");
-//	        			board = copyBoard(copyBoard);
-//	    				handleMoves(nextState.getLastMove(), false);
-//	    				if (enableOutput){
-//	            			System.out.println(nextState.getValue());
-//	            			System.out.println("Moved " + nextState.getLastMove());
-//	    				}
-//	    				movedAlready = true;
-//	    				break;
-//	    			}
-//	    			i--;
-//	    		}
-//    		}
     		if (!movedAlready){
-//    			System.out.println("Using original move");
     			addNewTile(copyBoard);
     			updateText();
     			updateColors();
@@ -1341,9 +1310,6 @@ public class GameGUI extends JFrame {
     			aiDepth = AI_HARD;
     		else
     			aiDepth = AI_EASY;
-    		if (checkLoss(false)){
-//    			updateFrequencies();
-    		}
     		return 0;
     	  }
       }.execute();
@@ -1359,12 +1325,12 @@ public class GameGUI extends JFrame {
     	}
 		return countEmpty;
     }
-    public static void createGameTree(State s, int d, int[][] originalBoard) {
+    public static void createGameTree(State s, int d, int[][] stateBoard) {
     	if(d == 0){
     		return;
     	}
     	if(s.getChildren().length == 0){
-    		s.initializeChildren(originalBoard, d);
+    		s.initializeChildren(stateBoard, d);
     	}
     	for(State st : s.getChildren()){
     		createGameTree(st, d-1, st.getBoard());
@@ -1392,11 +1358,6 @@ public class GameGUI extends JFrame {
     	double empty = Math.log(countEmpty) * weights.get("Empty");
     	double max = maxLocations[2] * weights.get("Max");
     	double score = smoothness + mono + empty + max;
-    	double factor = (Math.log(maxLocations[2]) / Math.log(2));
-//    	if (maxLocations[0] == 0 && (maxLocations[1] == 0 || maxLocations[1] == 3)
-//    	    	|| (maxLocations[0] == 3 && (maxLocations[1] == 0 || maxLocations[1] == 3))){
-//    	    score *= factor;
-//    	}
     	if (enableOutput)
     		System.out.println((int) Math.round(score));
     	return (int) Math.round(score);
@@ -1513,8 +1474,6 @@ public class GameGUI extends JFrame {
     private static JLabel scoreHeaderLabel;
     private static JLabel jLbl0_1;
     private static JLabel bestHighScoreLbl;
-    private static JLabel winLabel;
-    private static JLabel tryAgainLabel;
     private static JLabel jLbl0_2;
     private static JLabel jLbl0_3;
     private static JLabel jLbl1_0;
@@ -1522,12 +1481,10 @@ public class GameGUI extends JFrame {
     private static JLabel jLbl1_2;
     private static JLabel jLbl1_3;
     private static JLabel jLbl2_0;
-    private static JPanel mainPanel;
     private static JPanel jPanel0_3;
     private static JPanel jPanel1_0;
     private static JPanel jPanel1_1;
     private static JPanel jPanel1_2;
-    private static JPanel menuPanel;
     private static JPanel jPanel1_3;
     private static JPanel scorePanel;
     private static JPanel jPanel2_0;
