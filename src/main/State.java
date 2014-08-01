@@ -7,10 +7,10 @@ public class State implements Comparable<State>{
     /** A State array of length 0. */
     public final static State[] length0= {};
     
-    /** It is player's turn to play. */
-
+    private int depth;
+    
     /** The current Board layout. */
-    private int[][] board;
+    private Board board;
 
     /** All possible game States that can result from the next player's Move.
      *  The length of the array equals the number of States.
@@ -24,15 +24,16 @@ public class State implements Comparable<State>{
     /** Constructor: a game State consisting of board b, with player player
      *  to play next; lm is the last Move made on this game --null
      *  if the user does not care what the last move made was. */
-    public State(int[][] b, int lastMove) {
-        board = b;
+    public State(Board board, int lastMove, int depth) {
+        this.board = board;
         value = 0;
-        actualScore = GameGUI.getCurrentScore();
+        actualScore = board.getScore();
         this.lastMove = lastMove;
+        this.depth = depth;
     }
     
     /** Return this State's Board. */
-    public int[][] getBoard() {
+    public Board getBoard() {
         return board;
     }
 
@@ -70,46 +71,49 @@ public class State implements Comparable<State>{
      *  initializes only this State's children; it does not recursively
      *  initialize all descendants. 
      */
-    public void initializeChildren(int[][] copyBoard, int curDepth) { 
+    public void initializeChildren(Board copyBoard, int curDepth) { 
     	Integer[] moves = getPossibleMoves();
-		GameGUI.board = GameGUI.copyBoard(copyBoard);
+		board = copyBoard.copyBoard();
     	ArrayList<State> states1 = new ArrayList<State>();
-    	int limit = (GameGUI.getAIDepth() >= 6) ? 2 : 1;
+    	int limit = (depth >= 6) ? 2 : 1;
     	for(int i = 0; i < moves.length; i++){
-    		GameGUI.updateBoard(moves[i], false, true);
-    		State rohitsState = new State(GameGUI.getBoard(), moves[i]);
+    		board.updateBoard(moves[i], false, true);
+    		State rohitsState = new State(board, moves[i], depth - 1);
     		states1.add(rohitsState);
 			if (curDepth > limit){
-	    		ArrayList<State> extraStates = this.getPossibleRandomMoves(moves[i], GameGUI.getBoard());
+	    		ArrayList<State> extraStates = this.getPossibleRandomMoves(moves[i], board);
 	    		for (State extraState : extraStates)
 	    			states1.add(extraState);
 			}
-    		GameGUI.board = GameGUI.copyBoard(copyBoard);
+    		board = copyBoard.copyBoard();
     	}
 
     	children = states1.toArray(new State[states1.size()]);
     }
     private Integer[] getPossibleMoves(){
     	ArrayList<Integer> moves = new ArrayList<Integer>();
-    	if (GameGUI.checkMove(KeyEvent.VK_LEFT, true))
+    	if (board.checkMove(KeyEvent.VK_LEFT, true))
     		moves.add(37);
-    	if (GameGUI.checkMove(KeyEvent.VK_UP, true))
+    	if (board.checkMove(KeyEvent.VK_UP, true))
     		moves.add(38);
-    	if (GameGUI.checkMove(KeyEvent.VK_RIGHT, true))
+    	if (board.checkMove(KeyEvent.VK_RIGHT, true))
     		moves.add(39);
-    	if (GameGUI.checkMove(KeyEvent.VK_DOWN, true))
+    	if (board.checkMove(KeyEvent.VK_DOWN, true))
     		moves.add(40);
     	return moves.toArray(new Integer[moves.size()]);
     } 
-    private ArrayList<State> getPossibleRandomMoves(int lastMove, int[][] board){
-    	int[][] originalBoard = GameGUI.copyBoard(board);
+    private ArrayList<State> getPossibleRandomMoves(int lastMove, Board b){
+    	Board originalBoard = board.copyBoard();
+    	int[][] board = b.getBoard();
     	ArrayList<State> posRandomMoves = new ArrayList<State>();
     	for (int r = 0; r < board.length; r++){
     		for (int c = 0; c < board[r].length; c++){
     			if (board[r][c] == 0){
     				board[r][c] = 2;
-    				posRandomMoves.add(new State(board, lastMove));
-    				board = GameGUI.copyBoard(originalBoard);
+    				b.setBoard(board);
+    				posRandomMoves.add(new State(b, lastMove, depth));
+    				board[r][c] = 0;
+    				b = originalBoard.copyBoard();
     			}
     		}
     	}

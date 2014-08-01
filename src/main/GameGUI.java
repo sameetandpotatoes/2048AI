@@ -94,6 +94,7 @@ public class GameGUI extends JFrame {
     	return board;
     }
     private void initComponents() {
+    	loseLbl = new JLabel();
         mainGameFrame = new JFrame();
         jPanel0_0 = new JPanel();
         jLbl0_0 = new JLabel();
@@ -140,104 +141,6 @@ public class GameGUI extends JFrame {
         titleLabel.setFont(new java.awt.Font("Arial", 1, 60)); // NOI18N
         titleLabel.setForeground(new java.awt.Color(119, 110, 101));
         titleLabel.setText("2048");
-
-//        
-//        mainGameFrame.setAlwaysOnTop(true);
-//        mainGameFrame.setMinimumSize(new Dimension(405, 523));
-//        mainGameFrame.setType(java.awt.Window.Type.POPUP);
-//        mainGameFrame.setResizable(false);
-//
-//        mainPanel.setBackground(new Color(255, 255, 51));
-//
-//        winLabel.setBackground(new Color(255, 255, 255));
-//        winLabel.setFont(new Font(fontStyle, 1, 50));
-//        winLabel.setForeground(new Color(255, 255, 255));
-//        winLabel.setHorizontalAlignment(SwingConstants.CENTER);
-//        winLabel.setText("You win!");
-//
-//        menuPanel.setBackground(new Color(143, 122, 102));
-//
-//        tryAgainLabel.setFont(new Font(fontStyle, 0, 18));
-//        tryAgainLabel.setForeground(new Color(255, 255, 255));
-//        tryAgainLabel.setHorizontalAlignment(SwingConstants.CENTER);
-//        tryAgainLabel.setText("Try again");
-//        tryAgainLabel.addMouseListener(new MouseListener(){
-//
-//			@Override
-//			public void mouseClicked(MouseEvent arg0) {
-//			}
-//
-//			@Override
-//			public void mouseEntered(MouseEvent arg0) {
-//			}
-//
-//			@Override
-//			public void mouseExited(MouseEvent arg0) {
-//			}
-//
-//			@Override
-//			public void mousePressed(MouseEvent arg0) {
-//				updateHigh();
-//				restart();
-//				updateText();
-//				updateColors();
-//			}
-//
-//			@Override
-//			public void mouseReleased(MouseEvent arg0) {
-//			}
-//        	
-//        });
-//        GroupLayout menuPanelLayout = new GroupLayout(menuPanel);
-//        menuPanel.setLayout(menuPanelLayout);
-//        menuPanelLayout.setHorizontalGroup(
-//            menuPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-//            .addGroup(menuPanelLayout.createSequentialGroup()
-//                .addContainerGap()
-//                .addComponent(tryAgainLabel)
-//                .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-//        );
-//        menuPanelLayout.setVerticalGroup(
-//            menuPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-//            .addGroup(menuPanelLayout.createSequentialGroup()
-//                .addContainerGap()
-//                .addComponent(tryAgainLabel)
-//                .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-//        );
-//
-//        GroupLayout mainPanelLayout = new GroupLayout(mainPanel);
-//        mainPanel.setLayout(mainPanelLayout);
-//        mainPanelLayout.setHorizontalGroup(
-//            mainPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-//            .addComponent(winLabel, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-//            .addGroup(GroupLayout.Alignment.TRAILING, mainPanelLayout.createSequentialGroup()
-//                .addContainerGap(155, Short.MAX_VALUE)
-//                .addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
-//                    .addComponent(menuPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-//                .addGap(154, 154, 154))
-//        );
-//        mainPanelLayout.setVerticalGroup(
-//            mainPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-//            .addGroup(mainPanelLayout.createSequentialGroup()
-//                .addGap(155, 155, 155)
-//                .addComponent(winLabel, GroupLayout.PREFERRED_SIZE, 108, GroupLayout.PREFERRED_SIZE)
-//                .addGap(0, 0, 0)
-//                .addComponent(menuPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-//                .addGap(18, 18, 18)
-//                .addContainerGap(177, Short.MAX_VALUE))
-//        );
-//
-//        GroupLayout mainGameFrameLayout = new GroupLayout(mainGameFrame.getContentPane());
-//        mainGameFrame.getContentPane().setLayout(mainGameFrameLayout);
-//        mainGameFrameLayout.setHorizontalGroup(
-//            mainGameFrameLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-//            .addComponent(mainPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-//        );
-//        mainGameFrameLayout.setVerticalGroup(
-//            mainGameFrameLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-//            .addComponent(mainPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-//        );
-//
 
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setTitle("2048");
@@ -752,6 +655,9 @@ public class GameGUI extends JFrame {
                 .addComponent(highScoreLabel, GroupLayout.DEFAULT_SIZE, 34, Short.MAX_VALUE)
                 .addGap(0, 0, 0))
         );
+        loseLbl.setText("Game Over!");
+        loseLbl.setVisible(false);
+        
         tryAgain.setText("Restart");
         tryAgain.setFocusable(false);
         tryAgain.setRequestFocusEnabled(false);
@@ -831,7 +737,9 @@ public class GameGUI extends JFrame {
                         .addGap(18, 18, 18)
                         .addComponent(AIButton)
                         .addGap(18, 18, 18)
-                        .addComponent(tryAgain))
+                        .addComponent(tryAgain)
+                        .addGap(18, 18, 18)
+                        .addComponent(loseLbl))
                     .addComponent(titleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 146, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(0, 0, Short.MAX_VALUE))
         );
@@ -845,7 +753,9 @@ public class GameGUI extends JFrame {
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                     .addComponent(AIButton)
                     .addGap(18, 18, 18)
-                    .addComponent(tryAgain))
+                    .addComponent(tryAgain)
+                    .addGap(18, 18, 18)
+                    .addComponent(loseLbl))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                     .addComponent(jPanel0_2, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
@@ -887,10 +797,7 @@ public class GameGUI extends JFrame {
              mainGameFrame.setVisible(true);
          }
          if (checkLoss(ai)) {
-//        	 winLabel.setText("Game over!");
-//             winLabel.setForeground(NUMBER_COLOR);
-//             mainPanel.setBackground(new Color(238, 228, 218));
-//             mainGameFrame.setVisible(true);
+        	 loseLbl.setVisible(true);
          }
          updateColors(); //If tiles changed numbers, we need to update the colors
          if (ai_running)
@@ -904,46 +811,6 @@ public class GameGUI extends JFrame {
         	frequencies.put(keyValuePair[0], Integer.parseInt(keyValuePair[1]));
         }
         scanner.close();
-    }
-    private static void getInfoFromBoard(){
-    	for (int r = 0; r < board.length; r++){
-    		for (int c = 0; c < board[r].length; c++){
-    			if (board[r][c] != 0){
-    				switch(board[r][c]){
-    					case 512:
-    						frequencies.put("512", 	
-    												frequencies.get("512")+1);
-    						break;
-    					case 1024:
-    						frequencies.put("1024", 
-    												frequencies.get("1024")+1);
-    						frequencies.put("512", 	
-    												frequencies.get("512")+2);
-    						break;
-    					case 2048:
-    						frequencies.put("2048", 
-									frequencies.get("2048")+1);
-    						frequencies.put("1024", 
-									frequencies.get("1024")+2);
-    						frequencies.put("512", 	
-									frequencies.get("512")+4);
-    						break;
-    					case 4096:
-    						frequencies.put("4096", 
-									frequencies.get("4096")+1);
-    						frequencies.put("2048", 
-									frequencies.get("2048")+2);
-    						frequencies.put("1024", 
-									frequencies.get("1024")+4);
-    						frequencies.put("512", 
-									frequencies.get("512")+8);
-    						break;
-    					default:
-    						break;
-    				}
-    			}
-    		}
-    	}
     }
     public static void updateFrequencies(){
     	try {
@@ -1107,6 +974,9 @@ public class GameGUI extends JFrame {
         board = rotated;
     }
     public static void restart() {
+    	if (loseLbl != null)
+    		loseLbl.setVisible(false);
+    	
             currentScore = 0;
             aiDepth = AI_EASY;
             ai_running = false;
@@ -1501,4 +1371,5 @@ public class GameGUI extends JFrame {
     private static JPanel jPanel0_2;
     private static JLabel titleLabel;
     private static JButton tryAgain;
+    private static JLabel loseLbl;
 }
